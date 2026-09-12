@@ -140,8 +140,8 @@ function buildTable(random){
  pencil(-12,-32,15,0xe3b946,Math.PI/2);pencil(17,-32,14,0x629586,1.51);pencil(-10,32,14,0xc9674d,1.62);pencil(22,32,12,0x668aac,1.5);pencil(-44,-8,13,0x698fab,.06);pencil(44,10,16,0xd98b49,-.04);
  for(let i=0;i<35;i++){let p=spot(.55);if(!p)break;let g=groupAt(p,random()*3),tor=mesh(new THREE.TorusGeometry(.43,.05,5,18),i%2?0xafb5a9:0xc8a151,0,.12,0,g);tor.rotation.x=-Math.PI/2;tor.scale.set(.65,1,1.6);}
  // Book abutments flank the flyover while leaving the lower crossing open.
- for(let side of[-1,1]){const node=track.nodes.reduce((best,p)=>Math.abs(p.y-4.6)<Math.abs(best.y-4.6)&&Math.sign(p.z)===side?p:best,track.nodes[0]);for(let edge of[-1,1]){let x=node.x+node.tz*edge*4.9,z=node.z-node.tx*edge*4.9;if(Math.min(...track.nodes.filter(p=>p.y<1).map(p=>Math.hypot(x-p.x,z-p.z)))<5)continue;for(let j=0;j<4;j++){let g=book(x,z,2.7,3.6,.65,[0x587b68,0xb16a4d,0xc5a65b,0x697f96][j],'',node.heading);g.position.y=j*.92;}}}
- label('POCKET RALLY  •  GRAND CIRCUIT','#cda776','#8f744f',20,1.5,0,-.1,29);
+ if(track.nodes.some(p=>p.y>4))for(let side of[-1,1]){const node=track.nodes.reduce((best,p)=>Math.abs(p.y-4.6)<Math.abs(best.y-4.6)&&Math.sign(p.z)===side?p:best,track.nodes[0]);for(let edge of[-1,1]){let x=node.x+node.tz*edge*4.9,z=node.z-node.tx*edge*4.9;if(Math.min(...track.nodes.filter(p=>p.y<1).map(p=>Math.hypot(x-p.x,z-p.z)))<5)continue;for(let j=0;j<4;j++){let g=book(x,z,2.7,3.6,.65,[0x587b68,0xb16a4d,0xc5a65b,0x697f96][j],'',node.heading);g.position.y=j*.92;}}}
+ label('POCKET RALLY  •  DESKTOP DASH','#cda776','#8f744f',20,1.5,0,-.1,29);
 }
 
 function sceneryPlacer(random){const used=[];return r=>{for(let i=0;i<3000;i++){let x=(random()-.5)*86,z=(random()-.5)*59;if(Math.abs(x)+r>45||Math.abs(z)+r>32)continue;if(Math.min(...track.nodes.map(p=>Math.hypot(x-p.x,z-p.z)))<track.course.width/2+r+.8||used.some(p=>Math.hypot(x-p.x,z-p.z)<r+p.r+.4))continue;used.push({x,z,r});return{x,z};}return null;};}
@@ -241,7 +241,7 @@ function spawnParticle(c,type){if(particles.length>90)return;const co=COURSES[se
 function updateVisuals(dt,t){
  boostWorld?.update(race,t,mode!=='menu'&&cameraMode==='chase'?chaseCamera:camera);
  for(let i=0;i<race.cars.length;i++){let c=race.cars[i],g=carModels[i];g.position.set(c.x,c.y+.04,c.z);g.rotation.y=c.heading;let p=track.nodes[c.index],pitch=c.airborne?clamp(-c.vy*.035,-.3,.3):clamp(p.slope,-.45,.45);g.rotation.x=0;g.rotation.z=0;g.rotateX(-pitch);if(COURSES[selected].type==='boat')g.position.y+=Math.sin(t*5+i)*.045;g.visible=c.flash<=0||Math.floor(t*12)%3!==0;if(g.userData.playerTag)g.userData.playerTag.visible=mode==='menu'||cameraMode!=='chase';for(const wheel of g.userData.wheels)wheel.rotation.x+=c.speed*dt*2.7;
-  visualStyle.animate(c,g,dt,t,mode==='race'&&!race.paused&&race.countdown<=0);
+  visualStyle.animate(c,g,dt,t,mode==='race'&&!race.paused&&race.countdown<=0);c.hitboxScaleX=g.scale.x;c.hitboxScaleZ=g.scale.z;
   if(mode==='race'&&!race.paused&&race.countdown<=0){if(c.boosting&&Math.random()<.7)spawnParticle(c,'boost');if((c.drifting||COURSES[selected].type==='boat')&&Math.abs(c.speed)>4&&Math.random()<.25)spawnParticle(c,'dust');}
  }
  for(let a of animated){if(a.type==='fan'){a.g.rotation.z+=dt*14;}else if(a.type==='current'){a.g.position.x=((t*a.speed+a.phase*a.width)%a.width)-a.width/2;}else if(a.type==='water'){if(a.mat.userData.waterShader)a.mat.userData.waterShader.uniforms.waterTime.value=t;}else if(a.type==='foam'){a.g.position.y=Math.sin(t*1.4)*.025;}else if(a.type==='float'){a.g.position.y=a.y+Math.sin(t*1.4+a.phase)*.12;a.g.rotation.z=Math.sin(t+a.phase)*.028;}else if(a.type==='bug'){a.g.position.x=a.x+Math.sin(t*.3+a.phase)*.25;a.g.rotation.y+=dt*.06;}else if(a.type==='ripple'){let s=1+(t*.3+a.phase)%1;a.g.scale.set(s,s,s);}}

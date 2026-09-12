@@ -86,7 +86,8 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 ## Source layout
 
 - `dist/`: maintained HTML, CSS, JavaScript modules and vendored Three.js. **Do not delete or regenerate this directory as disposable build output.**
-- `dist/race.mjs`: circuit physics and CPU racing.
+- `dist/race.mjs`: circuit layouts, physics and CPU racing.
+- `dist/vehicle-physics.mjs`: shared vehicle hitboxes, collision responses and speed-dependent steering.
 - `dist/carpet-*.mjs`: carpet layout, scenery, collection race and rival navigation.
 - `dist/boost-*.mjs`: boost rules, contested pickup handling and visuals.
 - `dist/visual-style.mjs`, `dist/course-lights.mjs`: rendering styles and lighting.
@@ -94,7 +95,7 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 - `wrangler.jsonc`: independent Cloudflare deployment configuration.
 - `.openai/hosting.json`: the existing OpenAI Sites project connection. It is not a Cloudflare account credential and is not used by Wrangler. A separate Sites project must use its own Sites-managed project ID.
 
-This repository contains the game from Sites version 22, source commit `32d44eb6ee605afe50e4e64d2713bf9bcf126235`, including catch-up speed, reusable boost pads, contested boost refills, fourth-place circuit starts, and the latest CPU speed tuning, plus the deployment documentation and tooling. Uploading this repository does not establish automatic two-way synchronisation with Sites. Keep later source changes aligned explicitly when maintaining both hosting destinations.
+This repository contains the game from Sites version 24, source commit `f9d258cc1b88b03f3bc8cf1e21b2ad4d4359fc77`, including vehicle-sized hitboxes, reduced steering at high speeds, glowing forward-facing boost chevrons, gas-tank boost pickups, and the redesigned Desktop Dash circuit with clear barriers and straight jump landings, plus the deployment documentation and tooling. Uploading this repository does not establish automatic two-way synchronisation with Sites. Keep later source changes aligned explicitly when maintaining both hosting destinations.
 
 ## Verification and maintenance
 

@@ -24,8 +24,8 @@ export function makeBoostPickups(track){
 export function makeBoostPads(track){
  const count=track.course.mapScale?6:2,result=[];
  for(let k=0;k<count;k++){const preferred=Math.floor(track.n*(.12+k/count*.76));let best=null,score=Infinity;
-  track.nodes.forEach((p,index)=>{if(p.gap||p.ramp||Math.abs(p.slope)>.08||track.hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<14)||track.debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<6))return;const d=Math.abs(index-preferred),spacing=result.every(o=>Math.hypot(p.x-o.x,p.z-o.z)>18);if(spacing&&d<score){best={x:p.x,y:p.y,z:p.z,index};score=d}});
-  if(!best)throw new Error('No safe boost pad position for '+track.course.name);result.push({...best,id:k,cooldowns:new Map()});
+  track.nodes.forEach((p,index)=>{if(p.gap||p.ramp||Math.abs(p.slope)>.08||track.hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<14)||track.debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<6))return;const d=Math.abs(index-preferred),spacing=result.every(o=>Math.hypot(p.x-o.x,p.z-o.z)>18);if(spacing&&d<score){best={x:p.x,y:p.y,z:p.z,index,heading:p.heading};score=d}});
+  if(!best)throw new Error('No safe boost pad position for '+track.course.name);if(track.course.mode==='collect'){const node=track.nodes[best.index],next=track.nodes[node.neighbors[0]];best.heading=Math.atan2(next.x-node.x,next.z-node.z)}result.push({...best,id:k,cooldowns:new Map()});
  }
  return result;
 }

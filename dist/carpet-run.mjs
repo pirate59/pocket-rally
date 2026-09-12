@@ -1,3 +1,4 @@
+import {steeringRate,resolveVehicles,resolveObstacle} from './vehicle-physics.mjs';
 import {referenceCarpetLayout} from './carpet-layout.mjs';
 import {CarpetNavigation} from './carpet-rivals.mjs';
 import {BOOST_AI,useBoost,makeBoostPickups,makeBoostPads,boostStart,collectBoosts,collectBoostPads,assignCatchup} from './boost-system.mjs';
@@ -14,7 +15,7 @@ export function nearestCarpetRoad(track,x,z){
  return best;
 }
 export const TRAFFIC_LEVELS={easy:{count:8,speed:7},medium:{count:12,speed:9},hard:{count:16,speed:11}};
-const vehicle=(id,color,x,z,heading=0)=>({id,color,name:id?'Traffic '+id:'YOU',x,y:.13,z,heading,vx:0,vz:0,vy:0,speed:0,index:0,progress:0,boost:1,airborne:false,boosting:false,drifting:false,finish:null,flash:0,respawns:0,hazard:''});
+const vehicle=(id,color,x,z,heading=0)=>({vehicleType:id>3?'traffic':'car',id,color,name:id?'Traffic '+id:'YOU',x,y:.13,z,heading,vx:0,vz:0,vy:0,speed:0,index:0,progress:0,boost:1,airborne:false,boosting:false,drifting:false,finish:null,flash:0,respawns:0,hazard:''});
 export class CarpetRun{
  constructor(track,difficulty='medium',seed=(Math.random()*4294967296)>>>0){
   this.track=track;this.difficulty=TRAFFIC_LEVELS[difficulty]?difficulty:'medium';this.seed=seed;this.random=()=>{this.seed=(1664525*this.seed+1013904223)>>>0;return this.seed/4294967296};this.time=0;this.countdown=3.4;this.paused=false;this.obstacles=[];this.finished=[];this.collected=new Set();this.lastPickup=null;this.distance=0;this.collisions=0;this.collisionCooldown=0;
@@ -44,18 +45,16 @@ export class CarpetRun{
   if(this.paused||this.winner!==null)return;dt=Math.min(.04,dt);if(this.countdown>0){this.countdown-=dt;return}this.time+=dt;this.collisionCooldown=Math.max(0,this.collisionCooldown-dt);const boostStarts=boostStart(this.racers);assignCatchup(this.racers,this.ranking());
   const c=this.cars[0],road=nearestCarpetRoad(this.track,c.x,c.z),onRoad=road.d<this.track.course.width/2,throttle=(input.forward?1:0)-(input.reverse?1:0),steer=(input.left?1:0)-(input.right?1:0),brake=!!input.brake;
   c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);c.flash=Math.max(0,c.flash-dt);c.drifting=brake&&Math.abs(c.speed)>5;useBoost(c,input.boost&&throttle>0&&c.speed>2,dt);
-  c.heading+=steer*(brake?2.5:1.85)*clamp(Math.abs(c.speed)/5,0,1)*Math.sign(c.speed||1)*dt;
+  c.heading+=steer*steeringRate(Math.hypot(c.vx,c.vz),brake)*Math.sign(c.speed||1)*dt;
   const fx=Math.sin(c.heading),fz=Math.cos(c.heading),lateral=c.vx*fz-c.vz*fx,grip=brake?1.7:8.2;c.vx-=fz*lateral*Math.min(1,grip*dt);c.vz+=fx*lateral*Math.min(1,grip*dt);
   const accel=throttle*(throttle<0&&c.speed>0?24:14)*c.catchup+(c.boosting?20*c.catchup:0);c.vx+=fx*accel*dt;c.vz+=fz*accel*dt;
   const damping=Math.exp(-((onRoad?.64:1.45)+(brake?.9:0))*dt);c.vx*=damping;c.vz*=damping;const speed=Math.hypot(c.vx,c.vz),max=(c.boosting?29:20)*c.catchup;if(speed>max){c.vx*=max/speed;c.vz*=max/speed}if(c.speed<-7){c.vx*=.94;c.vz*=.94}
   const oldX=c.x,oldZ=c.z;c.x+=c.vx*dt;c.z+=c.vz*dt;
   const [bx,bz]=this.track.course.bounds;if(Math.abs(c.x)>bx){c.x=clamp(c.x,-bx,bx);c.vx*=-.25}if(Math.abs(c.z)>bz){c.z=clamp(c.z,-bz,bz);c.vz*=-.25}
-  for(const o of this.obstacles){const dx=c.x-o.x,dz=c.z-o.z,d=Math.hypot(dx,dz),r=o.r+.8;if(d<r){const nx=d>.001?dx/d:1,nz=d>.001?dz/d:0;c.x=o.x+nx*r;c.z=o.z+nz*r;const impact=c.vx*nx+c.vz*nz;if(impact<0){c.vx-=nx*impact*1.2;c.vz-=nz*impact*1.2}}}
+  for(const o of this.obstacles)resolveObstacle(c,o);
   c.hazard=onRoad?'':'CARPET · SOFT SURFACE';this.distance+=Math.hypot(c.x-oldX,c.z-oldZ);
   for(const car of this.cars.slice(1)){if(car.racer){const x=car.x,z=car.z;this.moveRival(car,dt);this.collect(car,x,z,dt)}else this.moveTraffic(car,dt)}
-  for(const other of this.cars.slice(1)){
-   const dx=c.x-other.x,dz=c.z-other.z,d=Math.hypot(dx,dz);if(d<1.85){const nx=d>.001?dx/d:1,nz=d>.001?dz/d:0;c.x=other.x+nx*1.9;c.z=other.z+nz*1.9;const impact=(c.vx-other.vx)*nx+(c.vz-other.vz)*nz;if(impact<0){c.vx-=nx*impact*1.1;c.vz-=nz*impact*1.1}other.speed*=.3;if(this.collisionCooldown===0){this.collisions++;this.collisionCooldown=1}c.hazard='TRAFFIC BUMP'}
-  }
+  for(let i=0;i<this.cars.length;i++)for(let j=i+1;j<this.cars.length;j++){const a=this.cars[i],b=this.cars[j];if(a.finish!==null||b.finish!==null)continue;if(resolveVehicles(a,b)&&i===0){if(this.collisionCooldown===0){this.collisions++;this.collisionCooldown=1}c.hazard='TRAFFIC BUMP'}}
   this.collect(c,oldX,oldZ,dt);
   collectBoosts(this,this.racers,boostStarts,dt);collectBoostPads(this,this.racers,boostStarts,dt);
   this.finished=this.racers.filter(c=>c.finish!==null).sort((a,b)=>a.finish-b.finish||a.id-b.id).map(c=>c.id);if(this.finished.length)this.winner=this.finished[0];
@@ -81,8 +80,8 @@ export class CarpetRun{
   let desired=(c.cruise+(c.boosting?7:0))*(road?1:.55);const nearby=this.cars.filter(o=>o!==c&&o.finish===null&&Math.hypot(o.x-c.x,o.z-c.z)<8);
   for(const o of nearby){const x=o.x-c.x,z=o.z-c.z,ahead=x*fx+z*fz;if(ahead>0&&ahead<5&&Math.abs(x*fz-z*fx)<1.8)desired=Math.min(desired,Math.max(0,(ahead-2.3)*2))}
   c.blockedTime=desired<2?c.blockedTime+dt:0;if(c.blockedTime>1.2){const detour=nav.route(c,nearby,boostGoal);if(detour){c.route=detour;c.waypoint=0;c.blockedTime=0;return}c.blockedTime=0}
-  desired*=c.catchup;c.speed+=(desired-c.speed)*Math.min(1,dt*3);const travel=Math.min(d,c.speed*dt),oldX=c.x,oldZ=c.z;c.x+=fx*travel;c.z+=fz*travel;c.heading=Math.atan2(fx,fz);c.vx=(c.x-oldX)/dt;c.vz=(c.z-oldZ)/dt;
-  if(travel>=d-.001)c.waypoint=Math.min(path.length-1,c.waypoint+1);
+  const error=angle(Math.atan2(fx,fz)-c.heading);desired*=c.catchup;desired=Math.min(desired,Math.max(3,34/(1+Math.abs(error)*5)),Math.max(3,d*3));c.speed+=(desired-c.speed)*Math.min(1,dt*3);const turn=steeringRate(c.speed)*dt;c.heading+=clamp(error,-turn,turn);const travel=Math.min(d,c.speed*dt),oldX=c.x,oldZ=c.z;c.x+=Math.sin(c.heading)*travel;c.z+=Math.cos(c.heading)*travel;for(const o of this.obstacles)resolveObstacle(c,o);c.vx=(c.x-oldX)/dt;c.vz=(c.z-oldZ)/dt;
+  if(Math.hypot(c.x-p.x,c.z-p.z)<.35)c.waypoint=Math.min(path.length-1,c.waypoint+1);
  }
  moveTraffic(c,dt){
   let desired=c.cruise,fx=Math.sin(c.heading),fz=Math.cos(c.heading);
