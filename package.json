@@ -1,0 +1,16 @@
+{
+  "name": "pocket-rally",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Miniature 3D racing and free-route collection races",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "node scripts/check.mjs",
+    "check": "node scripts/check.mjs",
+    "deploy": "npm run check && wrangler deploy",
+    "deploy:check": "npm run check && wrangler deploy --dry-run"
+  },
+  "devDependencies": { "wrangler": "4.130.0" }
+}

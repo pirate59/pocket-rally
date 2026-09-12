@@ -1,0 +1,10 @@
+node_modules/
+.wrangler/
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.log
+.DS_Store
+
+# dist/ is the maintained game source and must remain tracked.
