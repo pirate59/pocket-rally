@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {COURSES,makeTrack,Race} from '../dist/race.mjs';
+import {ALBERT_PARK,albertPoint,lakeContains} from '../dist/albert-park.mjs';
+import {buildAlbertWorld} from '../dist/albert-world.mjs';
+import * as THREE from '../dist/three.module.mjs';
+const track=makeTrack(ALBERT_PARK),race=new Race(track);
+assert.equal(COURSES[9].id,'albert-park');
+assert.equal(track.sections.length,15);
+assert(track.nodes[0].tx<0&&track.nodes[0].tz<0,'Start line heads northwest toward Turn 1');
+let signedArea=0;
+for(let i=0;i<track.n;i++){
+ const a=track.nodes[i],b=track.nodes[(i+1)%track.n];signedArea+=a.x*b.z-b.x*a.z;
+ assert(Math.abs(a.slope)<.015,'Albert Park should have only subtle gradients');
+ assert(!a.gap&&!a.ramp,'There are no artificial jumps');
+ for(const side of[-1,0,1])assert(!lakeContains(a.x+a.tz*side*3.1,a.z-a.tx*side*3.1),'Lake must not overlap the road');
+ assert(Math.abs(a.y-track.terrainHeight(a.x,a.z)-.13)<.02,'Road follows the entire terrain board');
+}
+assert(signedArea>0,'Clockwise in the north-up map');
+const heights=track.nodes.map(p=>p.y),relief=Math.max(...heights)-Math.min(...heights);
+assert(relief>.4&&relief<.55,'Relief approximates 2.6 m at the established miniature elevation scale');
+assert(track.barriers.some(w=>w.runoff>3)&&track.barriers.some(w=>w.runoff<1),'Vary runoff around the circuit');
+globalThis.document={createElement:()=>({getContext:()=>({fillRect(){},fillText(){}})})};
+const obstacles=[],world=new THREE.Group(),scenery=buildAlbertWorld({world,track,addCollider:(x,z,r,y=0)=>obstacles.push({x,z,r,y})});
+assert(world.getObjectByName('Albert Park Lake'));
+for(const o of obstacles)assert(track.terrainDistance(o.x,o.z)-o.r>track.course.width/2+.3,'Scenery must clear the full road');
+const p=albertPoint(510,650),me=race.cars[0];Object.assign(me,p,{y:track.terrainHeight(p.x,p.z),vx:0,vz:0});race.countdown=0;race.step(1/90);
+assert.equal(me.respawns,1,'A car entering the lake is returned to the road');
+assert(!track.isWater(me.x,me.z));
+scenery.dispose();
+console.log('PASS: clockwise start, 14 turns, subtle continuous terrain, dry road, variable runoff, clear scenery and lake recovery');

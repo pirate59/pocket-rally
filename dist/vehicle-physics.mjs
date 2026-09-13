@@ -17,4 +17,19 @@ export function resolveObstacle(c,o){
  let nx,nz,depth;if(d>1e-8){nx=(delta[0]*b.axes[0].x+delta[1]*b.axes[1].x)/d;nz=(delta[0]*b.axes[0].z+delta[1]*b.axes[1].z)/d;depth=o.r-d}else{const margins=[b.halfWidth-Math.abs(local[0]),b.halfLength-Math.abs(local[1])],i=margins[0]<margins[1]?0:1,sign=local[i]<0?-1:1;nx=b.axes[i].x*sign;nz=b.axes[i].z*sign;depth=o.r+margins[i]}
  const hit={nx,nz,depth};push(c,hit);const impact=c.vx*nx+c.vz*nz;if(impact<0){c.vx-=nx*impact*1.2;c.vz-=nz*impact*1.2}return true;
 }
-export function resolveWall(c,w){const dx=w.bx-w.ax,dz=w.bz-w.az,len=Math.hypot(dx,dz);if(!len)return false;const t=clamp(((c.x-w.ax)*dx+(c.z-w.az)*dz)/(len*len),0,1),floor=w.ay+(w.by-w.ay)*t,b=box(c);if(c.y>floor+w.height||c.y+b.height<floor)return false;const hit=overlap(b,{x:(w.ax+w.bx)/2,z:(w.az+w.bz)/2,halfWidth:w.width/2,halfLength:len/2,axes:[{x:dz/len,z:-dx/len},{x:dx/len,z:dz/len}]});if(!hit)return false;push(c,hit);const impact=c.vx*hit.nx+c.vz*hit.nz;if(impact<0){c.vx-=hit.nx*impact*1.15;c.vz-=hit.nz*impact*1.15}return true}
+export function resolveWall(c,w){
+ const dx=w.bx-w.ax,dz=w.bz-w.az,len=Math.hypot(dx,dz);if(!len)return false;
+ const along=((c.x-w.ax)*dx+(c.z-w.az)*dz)/(len*len),t=clamp(along,0,1),floor=w.ay+(w.by-w.ay)*t,b=box(c);
+ if(c.y>floor+w.height||c.y+b.height<floor)return false;
+ let hit=overlap(b,{x:(w.ax+w.bx)/2,z:(w.az+w.bz)/2,halfWidth:w.width/2,halfLength:len/2,axes:[{x:dz/len,z:-dx/len},{x:dx/len,z:dz/len}]});if(!hit)return false;
+ if(w.normalA&&w.normalB&&(along>=0||w.joinedA)&&(along<=1||w.joinedB)){
+  // Connected spans have no collidable end caps. Use the continuous side
+  // normal so rubbing over a join cannot turn into a head-on impact.
+  let nx=w.normalA.x*(1-t)+w.normalB.x*t,nz=w.normalA.z*(1-t)+w.normalB.z*t,n=Math.hypot(nx,nz);nx/=n;nz/=n;
+  const distance=(c.x-w.ax-dx*t)*nx+(c.z-w.az-dz*t)*nz,sign=distance<0?-1:1;
+  hit={nx:nx*sign,nz:nz*sign,depth:radius(b,{x:nx,z:nz})+w.width/2-Math.abs(distance)};
+  if(hit.depth<=0)return false;
+ }
+ push(c,hit);const impact=c.vx*hit.nx+c.vz*hit.nz;if(impact<0){c.vx-=hit.nx*impact;c.vz-=hit.nz*impact;}
+ c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);return true;
+}

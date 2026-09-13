@@ -91,3 +91,23 @@ body[data-visual-style="cartoon"] .menu,body[data-visual-style="cartoon"] .cours
 .course-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.course-groups button{min-height:42px}.real-world-mode .minimap{width:130px;height:192px}.real-world-mode #hazard-status{font-size:12px}@media(max-width:540px){.real-world-mode .minimap{width:92px;height:136px}}
 
 @media(max-width:700px) and (min-height:600px){body.real-world-mode .menu{left:20px;right:20px;top:auto;bottom:80px;width:auto;max-height:48dvh}body.real-world-mode .menu h1{font-size:34px;margin:0 0 12px}body.real-world-mode .menu .intro,body.real-world-mode .menu>.eyebrow{display:none}body.real-world-mode .course{padding:11px 13px}body.real-world-mode .course-info{display:none}}
+
+.oran-park-mode .minimap{width:150px;height:133px}@media(max-width:540px){.oran-park-mode .minimap{width:105px;height:93px}}
+.albert-park-mode .minimap{width:150px;height:170px}@media(max-width:540px){.albert-park-mode .minimap{width:105px;height:119px}}
+
+/* Optional quiet racing view. Driving targets retain their full touch area. */
+.clutter-choice{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:56px;margin-top:12px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.clutter-choice>span{display:grid;gap:4px}.clutter-choice strong{font-size:14px}.clutter-choice small{font-size:12px;line-height:1.4;color:var(--muted)}
+.clutter-choice input{flex:0 0 24px;width:24px;height:24px;margin:0;accent-color:#365442;cursor:pointer}.clutter-choice input:focus-visible{outline:3px solid #ff6b32;outline-offset:4px}
+body.low-clutter.racing #hud,body.low-clutter.racing #minimap,body.low-clutter.racing #controls,
+body.low-clutter.racing .brand,body.low-clutter.racing .camera-control,body.low-clutter.racing #sound,
+body.low-clutter.racing .speed,body.low-clutter.racing #hazard-status{display:none!important}
+body.low-clutter.racing .topbar{height:auto;padding:0;top:max(12px,env(safe-area-inset-top));left:auto;right:max(12px,env(safe-area-inset-right));width:auto;justify-content:flex-end}
+body.low-clutter.racing .top-actions{position:static;gap:8px;transform:none}
+body.low-clutter.racing .driving-hud{top:max(14px,env(safe-area-inset-top));bottom:auto;left:max(12px,env(safe-area-inset-left));right:auto;transform:none;display:block;padding:8px 10px;width:116px;border:1px solid #ffffff66;border-radius:8px;background:#203129d9;pointer-events:none;color:#f5f6ed}
+body.low-clutter.racing .boost{width:94px;padding:0}
+body.low-clutter.racing .boost>div:first-child{font-size:12px;letter-spacing:0;line-height:1.2;margin-bottom:5px;white-space:nowrap}
+body.low-clutter.racing .boost>div:first-child>span:last-child{display:none}
+body.low-clutter.racing .boost-track{height:5px;background:#ffffff40}
+body.low-clutter.racing .boost-track.locked{background:repeating-linear-gradient(135deg,#793e35 0 5px,#ad6654 5px 10px)}
+body.low-clutter.racing .race-message{font-size:64px}body.low-clutter.racing .race-message.small{font-size:24px}

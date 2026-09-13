@@ -1,3 +1,7 @@
+import {ORAN_PARK,makeOranTerrain} from './oran-park.mjs';
+import {ALBERT_PARK,makeAlbertTerrain} from './albert-park.mjs';
+import {makeBarriers} from './track-boundaries.mjs';
+import {driveRealCar,REAL_GRIP} from './real-driving.mjs';
 import {PANORAMA,makePanoramaTerrain} from './real-courses.mjs';
 import {steeringRate,resolveVehicles,resolveObstacle,resolveWall} from './vehicle-physics.mjs';
 import {CARPET_COURSE} from './carpet-run.mjs';
@@ -14,9 +18,9 @@ export const COURSES = [
  {name:'Backyard Wilds',revision:2,tag:'THE WILD GARDEN RALLY',desc:'Carve through the roots and toys.<br>Two dirt jumps. One timber skybridge.',tags:['ROOT CHICANES','TWIN DIRT JUMPS','TIMBER SKYBRIDGE'],type:'buggy',color:0x688849,road:0x755333,width:6.1,bounds:[44,31],walls:true,gap:[.335,.351],rampStart:.313,extraJumps:[{rampStart:.782,gap:[.804,.820]}],points:[[-35,0,-18],[-21,0,-25],[-8,0,-24],[-2,1,-14],[6,0,-7],[19,0,-18],[32,0,-24],[39,0,-13],[29,0,-5],[25,0,5],[37,0,11],[34,0,24],[21,0,25],[11,2,14],[0,6,0],[-11,2,-5],[-23,0,2],[-17,0,14],[-24,0,25],[-38,0,23],[-40,0,10],[-33,0,3],[-39,0,-6]]}
 
 ];
-COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA);
+COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA,ORAN_PARK,ALBERT_PARK);
 // Boost pickups replace regenerating boost; keep earlier time records separate.
-COURSES.forEach(course=>{course.revision=(course.revision||0)+2});
+COURSES.forEach(course=>{course.revision=(course.revision||0)+2+(course.realWorld?1:0)});
 export const COLORS=['#ef5b3f','#f6c64b','#6e87e7','#88bf73'];
 export const NAMES=['YOU','Miso','Bolt','Clover'];
 export function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
@@ -31,13 +35,12 @@ export function makeTrack(course){
  const total=lengths.at(-1),nodes=[],n=course.mapScale?Math.ceil(total/.5):640,jumps=course.jumpAnchors?course.jumpAnchors.map(([x,z])=>{let k=0,best=Infinity;for(let i=0;i<raw.length;i++){let d=Math.hypot(raw[i][0]-x,raw[i][2]-z);if(d<best){best=d;k=i;}}let crest=lengths[k];return{rampStart:(crest-12)/total,gap:[crest/total,(crest+3.4)/total]};}):[{rampStart:course.rampStart,gap:course.gap},...(course.extraJumps||[])];let j=0;
  for(let i=0;i<n;i++){let d=i/n*total;while(lengths[j+1]<d)j++;let t=(d-lengths[j])/(lengths[j+1]-lengths[j]),v=raw[j].map((a,k)=>a+(raw[j+1][k]-a)*t),u=i/n;v[1]=Math.max(0,v[1]);for(const jump of jumps)if(u>=jump.rampStart&&u<jump.gap[0])v[1]+=2.1*(u-jump.rampStart)/(jump.gap[0]-jump.rampStart);nodes.push({x:v[0],y:v[1]+.13,z:v[2],gap:jumps.some(jump=>u>=jump.gap[0]&&u<jump.gap[1]),ramp:jumps.some(jump=>u>=jump.rampStart&&u<jump.gap[0])});}
  for(let i=0;i<n;i++){let a=nodes[wrap(i-1,n)],b=nodes[(i+1)%n],q=nodes[i],len=Math.hypot(b.x-a.x,b.z-a.z);q.tx=(b.x-a.x)/len;q.tz=(b.z-a.z)/len;q.heading=Math.atan2(q.tx,q.tz);q.slope=(b.y-a.y)/len;}
- const barriers=[];
- if(course.walls)for(let i=0;i<n;i+=3){let a=nodes[i],b=nodes[(i+3)%n];if([0,1,2,3].some(k=>nodes[(i+k)%n].gap))continue;if(course.intersection&&Math.hypot(a.x,a.z)<(course.intersection.radius||course.width*.88))continue;for(let side of[-1,1]){const edge=course.width/2+(course.barrierOffset??.18);barriers.push({index:i,ax:a.x+a.tz*edge*side,az:a.z-a.tx*edge*side,ay:a.y,bx:b.x+b.tz*edge*side,bz:b.z-b.tx*edge*side,by:b.y,height:.62,width:.34});}}
+ const barriers=makeBarriers(nodes,course);
  const hazards=[],debris=[];
  if(course.hazard){let p=nodes.reduce((best,p)=>Math.hypot(p.x-course.hazardAnchor[0],p.z-course.hazardAnchor[1])<Math.hypot(best.x-course.hazardAnchor[0],best.z-course.hazardAnchor[1])?p:best,nodes[0]);hazards.push({x:p.x,z:p.z,tx:p.tx,tz:p.tz,length:14,width:course.width+1,kind:course.hazard,label:course.hazardLabel,fx:p.tz*(course.hazard==='stream'?4.5:3.8),fz:-p.tx*(course.hazard==='stream'?4.5:3.8)});}
  if(course.mapScale&&!course.realWorld){for(let k=0;k<10;k++){const start=Math.floor((.09+k*.083)*n);for(let j=0;j<Math.floor(n*.03);j++){let i=(start+j)%n,p=nodes[i],u=i/n;if(p.gap||p.ramp||Math.hypot(p.x,p.z)<26||jumps.some(g=>Math.abs(u-g.gap[0])*total<45)||hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<27)||debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<36))continue;const side=k%2?1:-1,offset=course.width/2-.52;debris.push({x:p.x+p.tz*offset*side,z:p.z-p.tx*offset*side,y:p.y,r:1.05,index:i,side,heading:p.heading});break;}}}
  const cells=new Map();for(const w of barriers){let minX=Math.floor((Math.min(w.ax,w.bx)-2)/8),maxX=Math.floor((Math.max(w.ax,w.bx)+2)/8),minZ=Math.floor((Math.min(w.az,w.bz)-2)/8),maxZ=Math.floor((Math.max(w.az,w.bz)+2)/8);for(let x=minX;x<=maxX;x++)for(let z=minZ;z<=maxZ;z++){let key=x+','+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(w);}}
- const track={nodes,n,length:total,spacing:total/n,course,jumps,barriers,hazards,debris,barrierCells:cells};if(course.realWorld)makePanoramaTerrain(track);return track;
+ const track={nodes,n,length:total,spacing:total/n,course,jumps,barriers,hazards,debris,barrierCells:cells};if(course.id==='albert-park')makeAlbertTerrain(track);else if(course.id==='oran-park')makeOranTerrain(track);else if(course.realWorld)makePanoramaTerrain(track);return track;
 }
 export function nearest(track,x,z,y=0,hint=null){let best=null,bestScore=Infinity,n=track.n;const start=hint===null?0:hint-65,end=hint===null?n:hint+66;for(let k=start;k<end;k++){let i=wrap(k,n),p=track.nodes[i],d=Math.hypot(x-p.x,z-p.z),score=d*d+Math.pow(Math.max(0,Math.abs(y-p.y)-1),2)*1.8;if(score<bestScore){bestScore=score;best={i,p,d};}}return best;}
 export const DIFFICULTIES={
@@ -47,13 +50,13 @@ export const DIFFICULTIES={
 };
 export class Race{
  constructor(track,difficulty='medium'){this.difficulty=DIFFICULTIES[difficulty]?difficulty:'medium';this.track=track;this.time=0;this.countdown=3.4;this.finished=[];this.obstacles=[];this.paused=false;this.boostPickups=makeBoostPickups(track);this.boostPads=makeBoostPads(track);this.cars=COLORS.map((color,i)=>{const slot=i===0?3:i-1;let progress=-8-slot*5,index=wrap(progress,track.n),p=track.nodes[index],lane=(slot%2?1:-1)*1.25;return{vehicleType:track.course.type,id:i,color,name:NAMES[i],x:p.x+p.tz*lane,z:p.z-p.tx*lane,y:p.y,heading:p.heading,vx:0,vz:0,vy:0,speed:0,progress,index,lastSafe:progress,boost:1,boostLocked:false,boostLap:0,catchup:1,padBoostTimer:0,padBoostCooldown:0,airborne:false,boosting:false,drifting:false,offTime:0,stuck:0,respawns:0,finish:null,flash:0};});}
- recover(c){let pos=c.lastSafe-3,p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];if(p.gap){pos-=20;p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];}Object.assign(c,{x:p.x,z:p.z,y:p.y+.15,heading:p.heading,vx:p.tx*4,vz:p.tz*4,vy:0,index:wrap(Math.floor(pos),this.track.n),progress:pos,airborne:false,offTime:0,stuck:0,flash:1.8});c.respawns++;}
+ recover(c){let pos=c.lastSafe-3,p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];if(p.gap){pos-=20;p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];}Object.assign(c,{x:p.x,z:p.z,y:p.y+.15,heading:p.heading,vx:p.tx*4,vz:p.tz*4,vy:0,steerAngle:0,yawRate:0,index:wrap(Math.floor(pos),this.track.n),progress:pos,airborne:false,offTime:0,stuck:0,flash:1.8});c.respawns++;}
  step(dt,input={}){
   if(this.paused)return;dt=Math.min(dt,.04);if(this.countdown>0){this.countdown-=dt;return}this.time+=dt;const boostStarts=boostStart(this.cars);assignCatchup(this.cars,this.ranking());
   for(const c of this.cars){if(c.finish!==null)continue;const tr=this.track,co=tr.course;let near=nearest(tr,c.x,c.z,c.y,c.index),p=near.p,onRoad=near.d<co.width/2,throttle=0,steer=0,brake=false,boost=false;
    if(c.id===0){throttle=(input.forward?1:0)-(input.reverse?1:0);steer=(input.left?1:0)-(input.right?1:0);brake=!!input.brake;boost=!!input.boost;}else{
     const skill=DIFFICULTIES[this.difficulty],speed=Math.max(0,c.speed),at=d=>tr.nodes[wrap(near.i+Math.round(d/tr.spacing),tr.n)];
-    const look=3.4+speed*.22,target=at(look),bend=angle(at(look+4).heading-at(Math.max(0,look-4)).heading);
+    const look=3.4+speed*(co.realWorld?.32:.22),target=at(look),bend=angle(at(look+4).heading-at(Math.max(0,look-4)).heading);
     let lane=clamp(bend*1.6,-1,1)*skill.line;
     // Keep clear of debris and choose a passing side when a slower rival is ahead.
     for(const o of tr.debris){let dx=o.x-c.x,dz=o.z-c.z,ahead=dx*p.tx+dz*p.tz;if(ahead>0&&ahead<look+4&&Math.hypot(dx,dz)<look+5)lane-=o.side*.7;}
@@ -66,18 +69,21 @@ export class Race{
     steer=clamp(err*skill.steering,-1,1);
     let desired=skill.boostSpeed-(c.id-1)*.15;
     // Preview upcoming curvature and brake before the bend, using the same vehicle limits as the player.
-    for(let d=0;d<=28;d+=3){const curvature=Math.abs(angle(at(d+3).heading-at(d-3).heading))/6,cornerSpeed=Math.sqrt(skill.lateral*(co.type==='boat'?.85:1)/Math.max(.001,curvature));desired=Math.min(desired,Math.sqrt(cornerSpeed*cornerSpeed+2*14*Math.max(0,d-3)));}
+    const cornerGrip=co.realWorld?REAL_GRIP*{easy:.53,medium:.60,hard:.68}[this.difficulty]:skill.lateral;
+    for(let d=0;d<=(co.realWorld?42:28);d+=3){const curvature=Math.abs(angle(at(d+3).heading-at(d-3).heading))/6,cornerSpeed=Math.sqrt(cornerGrip*(co.type==='boat'?.85:1)/Math.max(.001,curvature));desired=Math.min(desired,Math.sqrt(cornerSpeed*cornerSpeed+2*(co.realWorld?10:14)*Math.max(0,d-3)));}
     if(Math.abs(err)>.65||near.d>co.width/2-1)desired=Math.min(desired,11);
     boost=desired>skill.cruise+(this.difficulty==='hard'?.4:1)&&Math.abs(err)<(this.difficulty==='hard'?.25:.20)&&!c.boostLocked&&c.boost>(c.boosting?BOOST_LOW:{easy:.18,medium:.12,hard:BOOST_LOW}[this.difficulty])&&onRoad;
     if(!boost)desired=Math.min(desired,skill.cruise);
-    desired*=c.catchup;throttle=clamp((desired-speed)*.8+desired*.64/14,-.65,1);c.aiError=err;
+    if(!co.realWorld)desired*=c.catchup;throttle=clamp((desired-speed)*.8+(co.realWorld?.35:desired*.64/14),-.65,1);c.aiError=err;
 
    }
    c.flash=Math.max(0,c.flash-dt);c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);c.drifting=brake&&Math.abs(c.speed)>5;useBoost(c,boost&&throttle>0&&c.speed>2,dt);
+   if(co.realWorld)driveRealCar(c,{throttle,steer,brake,onRoad,p,track:tr},dt);else{
    const grip=co.type==='boat'?3.3:brake?1.7:8.2,turn=steeringRate(Math.hypot(c.vx,c.vz),brake,co.type);c.heading+=steer*turn*Math.sign(c.speed||1)*dt*(c.airborne?.48:1);
    const fx=Math.sin(c.heading),fz=Math.cos(c.heading),lateral=c.vx*fz-c.vz*fx;c.vx-=fz*lateral*Math.min(1,grip*dt);c.vz+=fx*lateral*Math.min(1,grip*dt);
    let accel=throttle*(throttle<0&&c.speed>0?24:14)*(c.airborne?.25:1)*c.catchup;if(c.boosting)accel+=20*c.catchup;if(co.realWorld&&!c.airborne)accel-=p.slope*8;c.vx+=fx*accel*dt;c.vz+=fz*accel*dt;
-   let drag=onRoad?.64:co.type==='boat'?1.1:2.2;if(brake)drag+=.9;const damping=Math.exp(-drag*dt);c.vx*=damping;c.vz*=damping;let mag=Math.hypot(c.vx,c.vz),max=(c.boosting?29:20)*c.catchup;if(mag>max){c.vx*=max/mag;c.vz*=max/mag}if(c.speed<-7){c.vx*=.94;c.vz*=.94}
+   let drag=onRoad?.64:co.offroadDrag??(co.type==='boat'?1.1:2.2);if(brake)drag+=.9;const damping=Math.exp(-drag*dt);c.vx*=damping;c.vz*=damping;let mag=Math.hypot(c.vx,c.vz),max=(c.boosting?29:20)*c.catchup;if(mag>max){c.vx*=max/mag;c.vz*=max/mag}if(c.speed<-7){c.vx*=.94;c.vz*=.94}
+   }
    c.hazard='';if(!c.airborne)for(const h of tr.hazards){const dx=c.x-h.x,dz=c.z-h.z;if(Math.abs(dx*h.tx+dz*h.tz)<h.length/2&&Math.abs(dx*h.tz-dz*h.tx)<h.width/2&&c.y<.7){c.hazard=h.label;c.vx+=h.fx*dt;c.vz+=h.fz*dt;if(h.kind==='stream'){c.vx*=Math.exp(-dt*.25);c.vz*=Math.exp(-dt*.25);}}}
    c.x+=c.vx*dt;c.z+=c.vz*dt;
    let next=nearest(tr,c.x,c.z,c.y,near.i),support=next.d<co.width/2&&!next.p.gap,surface=support?next.p.y:tr.terrainHeight?.(c.x,c.z)??0;
@@ -88,7 +94,7 @@ export class Race{
    if(Math.abs(delta)<35&&next.d<co.width*.75){c.progress+=delta;c.index=next.i;if(support&&!c.airborne&&Math.abs(c.y-next.p.y)<.5)c.lastSafe=c.progress;}
    refillLap(c,tr.n);
    if(next.d>co.width*.9)c.offTime+=dt;else c.offTime=0;c.stuck=Math.abs(c.speed)<1.5?c.stuck+dt:0;
-   if(Math.abs(c.x)>(co.bounds?.[0]||36)||Math.abs(c.z)>(co.bounds?.[1]||24)||c.y<-4||c.offTime>(c.id?2.0:4)||c.id&&c.stuck>2.5)this.recover(c);
+   if(Math.abs(c.x)>(co.bounds?.[0]||36)||Math.abs(c.z)>(co.bounds?.[1]||24)||c.y<-4||tr.isWater?.(c.x,c.z)&&!c.airborne||c.offTime>(c.id?2.0:4)||c.id&&c.stuck>2.5)this.recover(c);
    for(const o of this.obstacles)resolveObstacle(c,o);
    const nearbyWalls=new Set();for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(const wall of(tr.barrierCells.get((Math.floor(c.x/8)+dx)+','+(Math.floor(c.z/8)+dz))||[]))nearbyWalls.add(wall);
    for(const wall of nearbyWalls)resolveWall(c,wall);

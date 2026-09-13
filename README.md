@@ -97,6 +97,9 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 - `dist/race.mjs`: circuit layouts, physics and CPU racing.
 - `dist/real-courses.mjs`: Mount Panorama layout and shared terrain elevations.
 - `dist/panorama-world.mjs`: mountain terrain, scenery and circuit landmarks.
+- `dist/oran-*.mjs`, `dist/albert-*.mjs`: Oran Park and Albert Park layouts, terrain and scenery.
+- `dist/real-driving.mjs`: Real World tyre grip, braking, steering and hill forces.
+- `dist/track-boundaries.mjs`: continuous barriers and road edges without folded inside corners.
 - `dist/vehicle-physics.mjs`: shared vehicle hitboxes, collision responses and speed-dependent steering.
 - `dist/carpet-*.mjs`: carpet layout, scenery, collection race and rival navigation.
 - `dist/boost-*.mjs`: boost rules, contested pickup handling and visuals.
@@ -105,7 +108,7 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 - `wrangler.jsonc`: independent Cloudflare deployment configuration.
 - `.openai/hosting.json`: the existing OpenAI Sites project connection. It is not a Cloudflare account credential and is not used by Wrangler. A separate Sites project must use its own Sites-managed project ID.
 
-This repository contains the game from Sites version 25, source commit `993e9fe3a8c0e1708a002d62d85140646fc915b0`, including the Real World course category and Mount Panorama with whole-board mountain terrain, vehicle-sized hitboxes, reduced steering at high speeds, glowing forward-facing boost chevrons, gas-tank boost pickups, and the redesigned Desktop Dash circuit with clear barriers and straight jump landings, plus the deployment documentation and tooling. Uploading this repository does not establish automatic two-way synchronisation with Sites. Keep later source changes aligned explicitly when maintaining both hosting destinations.
+This repository contains the game published as Sites version 31, source commit `1b5c2ba28312a5ce3f432b749720a5db2e73dfbe`. It includes Mount Panorama, Oran Park and Albert Park; their terrain, scenery and runoff areas; the Low Clutter phone UI; improved Real World handling and grip; and continuous barriers with smooth glancing collisions and corrected inside corners. The gameplay assets and checks match the published source. Uploading this repository does not establish automatic two-way synchronisation with Sites. Keep later source changes aligned explicitly when maintaining both hosting destinations.
 
 ## Verification and maintenance
 
