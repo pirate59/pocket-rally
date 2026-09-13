@@ -87,3 +87,7 @@ body,#game{background:#000}
 body[data-visual-style="cartoon"] .menu,body[data-visual-style="cartoon"] .course-info{border:2px solid #203129;box-shadow:4px 4px 0 #dcff61}
 @media(max-width:650px){.menu{max-height:calc(100dvh - 180px);padding:12px}.menu h1{font-size:56px}.visual-choice{margin-top:10px}.visual-choice select{font-size:14px}}
 @media(orientation:landscape) and (max-height:600px){body.touch-enabled .menu{max-height:calc(100dvh - 140px)}body.touch-enabled.racing .driving-hud{padding:5px 10px}}
+
+.course-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.course-groups button{min-height:42px}.real-world-mode .minimap{width:130px;height:192px}.real-world-mode #hazard-status{font-size:12px}@media(max-width:540px){.real-world-mode .minimap{width:92px;height:136px}}
+
+@media(max-width:700px) and (min-height:600px){body.real-world-mode .menu{left:20px;right:20px;top:auto;bottom:80px;width:auto;max-height:48dvh}body.real-world-mode .menu h1{font-size:34px;margin:0 0 12px}body.real-world-mode .menu .intro,body.real-world-mode .menu>.eyebrow{display:none}body.real-world-mode .course{padding:11px 13px}body.real-world-mode .course-info{display:none}}

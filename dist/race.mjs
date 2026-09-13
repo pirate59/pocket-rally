@@ -1,3 +1,4 @@
+import {PANORAMA,makePanoramaTerrain} from './real-courses.mjs';
 import {steeringRate,resolveVehicles,resolveObstacle,resolveWall} from './vehicle-physics.mjs';
 import {CARPET_COURSE} from './carpet-run.mjs';
 import {grandCourses} from './grand-courses.mjs';
@@ -13,7 +14,7 @@ export const COURSES = [
  {name:'Backyard Wilds',revision:2,tag:'THE WILD GARDEN RALLY',desc:'Carve through the roots and toys.<br>Two dirt jumps. One timber skybridge.',tags:['ROOT CHICANES','TWIN DIRT JUMPS','TIMBER SKYBRIDGE'],type:'buggy',color:0x688849,road:0x755333,width:6.1,bounds:[44,31],walls:true,gap:[.335,.351],rampStart:.313,extraJumps:[{rampStart:.782,gap:[.804,.820]}],points:[[-35,0,-18],[-21,0,-25],[-8,0,-24],[-2,1,-14],[6,0,-7],[19,0,-18],[32,0,-24],[39,0,-13],[29,0,-5],[25,0,5],[37,0,11],[34,0,24],[21,0,25],[11,2,14],[0,6,0],[-11,2,-5],[-23,0,2],[-17,0,14],[-24,0,25],[-38,0,23],[-40,0,10],[-33,0,3],[-39,0,-6]]}
 
 ];
-COURSES.push(...grandCourses(COURSES),CARPET_COURSE);
+COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA);
 // Boost pickups replace regenerating boost; keep earlier time records separate.
 COURSES.forEach(course=>{course.revision=(course.revision||0)+2});
 export const COLORS=['#ef5b3f','#f6c64b','#6e87e7','#88bf73'];
@@ -34,9 +35,9 @@ export function makeTrack(course){
  if(course.walls)for(let i=0;i<n;i+=3){let a=nodes[i],b=nodes[(i+3)%n];if([0,1,2,3].some(k=>nodes[(i+k)%n].gap))continue;if(course.intersection&&Math.hypot(a.x,a.z)<(course.intersection.radius||course.width*.88))continue;for(let side of[-1,1]){const edge=course.width/2+(course.barrierOffset??.18);barriers.push({index:i,ax:a.x+a.tz*edge*side,az:a.z-a.tx*edge*side,ay:a.y,bx:b.x+b.tz*edge*side,bz:b.z-b.tx*edge*side,by:b.y,height:.62,width:.34});}}
  const hazards=[],debris=[];
  if(course.hazard){let p=nodes.reduce((best,p)=>Math.hypot(p.x-course.hazardAnchor[0],p.z-course.hazardAnchor[1])<Math.hypot(best.x-course.hazardAnchor[0],best.z-course.hazardAnchor[1])?p:best,nodes[0]);hazards.push({x:p.x,z:p.z,tx:p.tx,tz:p.tz,length:14,width:course.width+1,kind:course.hazard,label:course.hazardLabel,fx:p.tz*(course.hazard==='stream'?4.5:3.8),fz:-p.tx*(course.hazard==='stream'?4.5:3.8)});}
- if(course.mapScale){for(let k=0;k<10;k++){const start=Math.floor((.09+k*.083)*n);for(let j=0;j<Math.floor(n*.03);j++){let i=(start+j)%n,p=nodes[i],u=i/n;if(p.gap||p.ramp||Math.hypot(p.x,p.z)<26||jumps.some(g=>Math.abs(u-g.gap[0])*total<45)||hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<27)||debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<36))continue;const side=k%2?1:-1,offset=course.width/2-.52;debris.push({x:p.x+p.tz*offset*side,z:p.z-p.tx*offset*side,y:p.y,r:1.05,index:i,side,heading:p.heading});break;}}}
+ if(course.mapScale&&!course.realWorld){for(let k=0;k<10;k++){const start=Math.floor((.09+k*.083)*n);for(let j=0;j<Math.floor(n*.03);j++){let i=(start+j)%n,p=nodes[i],u=i/n;if(p.gap||p.ramp||Math.hypot(p.x,p.z)<26||jumps.some(g=>Math.abs(u-g.gap[0])*total<45)||hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<27)||debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<36))continue;const side=k%2?1:-1,offset=course.width/2-.52;debris.push({x:p.x+p.tz*offset*side,z:p.z-p.tx*offset*side,y:p.y,r:1.05,index:i,side,heading:p.heading});break;}}}
  const cells=new Map();for(const w of barriers){let minX=Math.floor((Math.min(w.ax,w.bx)-2)/8),maxX=Math.floor((Math.max(w.ax,w.bx)+2)/8),minZ=Math.floor((Math.min(w.az,w.bz)-2)/8),maxZ=Math.floor((Math.max(w.az,w.bz)+2)/8);for(let x=minX;x<=maxX;x++)for(let z=minZ;z<=maxZ;z++){let key=x+','+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(w);}}
- return{nodes,n,length:total,spacing:total/n,course,jumps,barriers,hazards,debris,barrierCells:cells};
+ const track={nodes,n,length:total,spacing:total/n,course,jumps,barriers,hazards,debris,barrierCells:cells};if(course.realWorld)makePanoramaTerrain(track);return track;
 }
 export function nearest(track,x,z,y=0,hint=null){let best=null,bestScore=Infinity,n=track.n;const start=hint===null?0:hint-65,end=hint===null?n:hint+66;for(let k=start;k<end;k++){let i=wrap(k,n),p=track.nodes[i],d=Math.hypot(x-p.x,z-p.z),score=d*d+Math.pow(Math.max(0,Math.abs(y-p.y)-1),2)*1.8;if(score<bestScore){bestScore=score;best={i,p,d};}}return best;}
 export const DIFFICULTIES={
@@ -75,11 +76,11 @@ export class Race{
    c.flash=Math.max(0,c.flash-dt);c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);c.drifting=brake&&Math.abs(c.speed)>5;useBoost(c,boost&&throttle>0&&c.speed>2,dt);
    const grip=co.type==='boat'?3.3:brake?1.7:8.2,turn=steeringRate(Math.hypot(c.vx,c.vz),brake,co.type);c.heading+=steer*turn*Math.sign(c.speed||1)*dt*(c.airborne?.48:1);
    const fx=Math.sin(c.heading),fz=Math.cos(c.heading),lateral=c.vx*fz-c.vz*fx;c.vx-=fz*lateral*Math.min(1,grip*dt);c.vz+=fx*lateral*Math.min(1,grip*dt);
-   let accel=throttle*(throttle<0&&c.speed>0?24:14)*(c.airborne?.25:1)*c.catchup;if(c.boosting)accel+=20*c.catchup;c.vx+=fx*accel*dt;c.vz+=fz*accel*dt;
+   let accel=throttle*(throttle<0&&c.speed>0?24:14)*(c.airborne?.25:1)*c.catchup;if(c.boosting)accel+=20*c.catchup;if(co.realWorld&&!c.airborne)accel-=p.slope*8;c.vx+=fx*accel*dt;c.vz+=fz*accel*dt;
    let drag=onRoad?.64:co.type==='boat'?1.1:2.2;if(brake)drag+=.9;const damping=Math.exp(-drag*dt);c.vx*=damping;c.vz*=damping;let mag=Math.hypot(c.vx,c.vz),max=(c.boosting?29:20)*c.catchup;if(mag>max){c.vx*=max/mag;c.vz*=max/mag}if(c.speed<-7){c.vx*=.94;c.vz*=.94}
    c.hazard='';if(!c.airborne)for(const h of tr.hazards){const dx=c.x-h.x,dz=c.z-h.z;if(Math.abs(dx*h.tx+dz*h.tz)<h.length/2&&Math.abs(dx*h.tz-dz*h.tx)<h.width/2&&c.y<.7){c.hazard=h.label;c.vx+=h.fx*dt;c.vz+=h.fz*dt;if(h.kind==='stream'){c.vx*=Math.exp(-dt*.25);c.vz*=Math.exp(-dt*.25);}}}
    c.x+=c.vx*dt;c.z+=c.vz*dt;
-   let next=nearest(tr,c.x,c.z,c.y,near.i),support=next.d<co.width/2&&!next.p.gap,surface=support?next.p.y:0;
+   let next=nearest(tr,c.x,c.z,c.y,near.i),support=next.d<co.width/2&&!next.p.gap,surface=support?next.p.y:tr.terrainHeight?.(c.x,c.z)??0;
    if(!c.airborne){if((p.gap||next.p.gap)&&c.y>.5||c.y-surface>.65){c.airborne=true;c.vy=Math.max(0,p.slope*c.speed)+1.3;}else{c.y=surface;c.vy=0;}}
    if(c.airborne){c.vy-=18*dt;c.y+=c.vy*dt;if(c.y<=surface&&c.vy<=0){c.y=surface;c.vy=0;c.airborne=false;}}
    // Checkpoints follow the route, including height at the overpass; shortcuts cannot award laps.

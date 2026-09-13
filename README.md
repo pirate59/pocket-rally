@@ -1,6 +1,6 @@
 # Pocket Rally
 
-A browser-based miniature racer with six circuits and a free-route Carpet City collection race. Includes keyboard and mobile touch controls, three CPU rivals, polished and cel-shaded graphics, dynamic lighting, and shared boost refills.
+A browser-based miniature racer with seven circuits and a free-route Carpet City collection race. Includes keyboard and mobile touch controls, three CPU rivals, polished and cel-shaded graphics, dynamic lighting, and shared boost refills.
 
 [Play the Sites version](https://pocket-rally.baaraamyou.chatgpt.site)
 
@@ -63,6 +63,14 @@ npm run deploy
 
 The Sites URL and a Cloudflare URL are different browser origins, so existing records and preferences do not automatically transfer. Clearing browser storage removes those local records. No D1, KV, R2, Durable Objects, migration files, database IDs, or application secrets are needed for deployment.
 
+## Real World courses
+
+Choose **Real World → Mount Panorama** for an approximate miniature recreation traced from the supplied circuit overview. Racing begins on Main Straight and runs counter-clockwise through Hell Corner, Mountain Straight, the mountain section, Conrod Straight, the Chase and Murrays Corner.
+
+The full terrain board, infield and outer slopes rise toward the summit. Road and off-road driving share that terrain, and the chase camera clears the hills. Elevations emulate the circuit's climb and descent; they are not a surveyed simulation. There are no artificial jump ramps or toy obstacles on this course.
+
+The outline follows the user-supplied map. Reference facts, including the 174 m elevation range and anti-clockwise direction, are from [Bathurst Regional Council](https://www.bathurst.nsw.gov.au/Services/Facilities/Mount-Panorama/About-the-Mount/Track-Facts).
+
 ## Game modes and controls
 
 - **Circuits:** three laps against three CPU racers; the player starts fourth.
@@ -87,6 +95,8 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 
 - `dist/`: maintained HTML, CSS, JavaScript modules and vendored Three.js. **Do not delete or regenerate this directory as disposable build output.**
 - `dist/race.mjs`: circuit layouts, physics and CPU racing.
+- `dist/real-courses.mjs`: Mount Panorama layout and shared terrain elevations.
+- `dist/panorama-world.mjs`: mountain terrain, scenery and circuit landmarks.
 - `dist/vehicle-physics.mjs`: shared vehicle hitboxes, collision responses and speed-dependent steering.
 - `dist/carpet-*.mjs`: carpet layout, scenery, collection race and rival navigation.
 - `dist/boost-*.mjs`: boost rules, contested pickup handling and visuals.
@@ -95,7 +105,7 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 - `wrangler.jsonc`: independent Cloudflare deployment configuration.
 - `.openai/hosting.json`: the existing OpenAI Sites project connection. It is not a Cloudflare account credential and is not used by Wrangler. A separate Sites project must use its own Sites-managed project ID.
 
-This repository contains the game from Sites version 24, source commit `f9d258cc1b88b03f3bc8cf1e21b2ad4d4359fc77`, including vehicle-sized hitboxes, reduced steering at high speeds, glowing forward-facing boost chevrons, gas-tank boost pickups, and the redesigned Desktop Dash circuit with clear barriers and straight jump landings, plus the deployment documentation and tooling. Uploading this repository does not establish automatic two-way synchronisation with Sites. Keep later source changes aligned explicitly when maintaining both hosting destinations.
+This repository contains the game from Sites version 25, source commit `993e9fe3a8c0e1708a002d62d85140646fc915b0`, including the Real World course category and Mount Panorama with whole-board mountain terrain, vehicle-sized hitboxes, reduced steering at high speeds, glowing forward-facing boost chevrons, gas-tank boost pickups, and the redesigned Desktop Dash circuit with clear barriers and straight jump landings, plus the deployment documentation and tooling. Uploading this repository does not establish automatic two-way synchronisation with Sites. Keep later source changes aligned explicitly when maintaining both hosting destinations.
 
 ## Verification and maintenance
 
