@@ -32,6 +32,12 @@ export function resolveWall(c,w){
   hit={nx:nx*sign,nz:nz*sign,depth:radius(b,{x:nx,z:nz})+w.width/2-Math.abs(distance)};
   if(hit.depth<=0)return false;
  }
- push(c,hit);const impact=c.vx*hit.nx+c.vz*hit.nz;if(impact<0){c.vx-=hit.nx*impact;c.vz-=hit.nz*impact;}
+ push(c,hit);const impact=c.vx*hit.nx+c.vz*hit.nz,speed=Math.hypot(c.vx,c.vz);if(impact<0){c.vx-=hit.nx*impact;c.vz-=hit.nz*impact;
+  // Absorb the impact without reflecting the car. One loss per impact,
+  // rather than charging a penalty for each connected panel at a corner.
+  if(w.barrierMode==='race'&&impact<-.4&&!(c.wallPenaltyCooldown>0)){
+   const retain=.72-.4*Math.min(1,-impact/Math.max(1,speed));c.vx*=retain;c.vz*=retain;c.wallPenaltyCooldown=.2;
+  }
+ }
  c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);return true;
 }

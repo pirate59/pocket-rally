@@ -26,3 +26,20 @@ marks.update([],110);assert.equal(marks.mesh.material.uniforms.time.value,110,'F
 marks.clear();assert.equal(marks.mesh.geometry.drawRange.count,0);assert.equal(marks.previous.size,0);
 marks.dispose();assert.equal(marks.mesh.parent,null);
 console.log('PASS: cornering, braking, acceleration, slopes, runoff, airborne/recovery gaps, bounded storage and reset');
+
+const {tyreSurface}=await import('../dist/tyre-marks.mjs');
+const {makeCarpetTrack,carpetSurface,CarpetRun}=await import('../dist/carpet-run.mjs');
+const {rugPoint}=await import('../dist/carpet-layout.mjs');
+const carpet=makeCarpetTrack();
+for(const lot of carpet.parking){const p=rugPoint(lot.x,lot.y);assert.equal(carpetSurface(carpet,p.x,p.z).paved,true,'Every visible car park is paved');assert.equal(tyreSurface(carpet,{...car,y:.13},p.x,p.z).soil,false,'Car parks leave rubber, not dirt');}
+const lot=rugPoint(carpet.parking[0].x,carpet.parking[0].y),road=carpet.start;
+function coastAt(p){const race=new CarpetRun(carpet,'medium',123);race.countdown=0;race.cars=race.cars.slice(0,1);race.racers=race.cars;Object.assign(race.cars[0],{x:p.x,z:p.z,heading:0,vx:0,vz:12,speed:12});race.step(1/90);return race.cars[0].vz;}
+assert(Math.abs(coastAt(lot)-coastAt(road))<1e-10,'Parking drag must exactly match road drag');
+const grass=rugPoint(85,40);assert.equal(carpetSurface(carpet,grass.x,grass.z).soil,true);assert(coastAt(grass)<coastAt(lot),'Grass retains its slowdown');
+const soilTrack={...track,course:{...track.course,realWorld:true},terrainHeight:()=>0};
+assert.equal(tyreSurface(soilTrack,{...car,y:0},5,0).soil,true);
+assert.equal(tyreSurface(soilTrack,car,5,0),null,'No terrain tracks below an elevated car');
+assert.equal(tyreSurface(soilTrack,{...car,y:0,airborne:true},5,0),null);
+const brown=new TyreMarks(new THREE.Group(),soilTrack,20);for(let i=0;i<10;i++)brown.update([{...car,x:6,y:0,z:i*.2}],i*.02);
+assert(brown.count>0,'Straight travel leaves tracks in grass');assert(brown.soil.array.slice(0,brown.count*4).every(v=>v===1),'Grass strips select brown pigment');brown.dispose();
+console.log('PASS: parking has road speed, grass still slows, brown grass tracks, and ground/air separation');

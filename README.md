@@ -1,6 +1,6 @@
 # Pocket Rally
 
-A browser-based miniature racer with seven circuits and a free-route Carpet City collection race. Includes keyboard and mobile touch controls, three CPU rivals, polished and cel-shaded graphics, dynamic lighting, and shared boost refills.
+A browser-based miniature racer with eight circuits and a free-route Carpet City collection race. Includes keyboard and mobile touch controls, three CPU rivals, polished and cel-shaded graphics, dynamic lighting, and shared boost refills.
 
 [Play the Sites version](https://pocket-rally.baaraamyou.chatgpt.site)
 
@@ -71,11 +71,22 @@ The full terrain board, infield and outer slopes rise toward the summit. Road an
 
 The outline follows the user-supplied map. Reference facts, including the 174 m elevation range and anti-clockwise direction, are from [Bathurst Regional Council](https://www.bathurst.nsw.gov.au/Services/Facilities/Mount-Panorama/About-the-Mount/Track-Facts).
 
+Real World circuits use section-specific safety shoulders: walls sit close to the asphalt through the mountain bends and move outward beside the start area and long straights. The shoulder is driveable but uses the off-road surface penalty, so the extra room is for recovery rather than a faster line.
+
+### Oran Park Raceway
+
+Choose **Real World → Oran Park Raceway** for the 2.620 km Grand Prix configuration used in its final years. The course includes the Sweeper, underpass, Shell Corner, Champion Curve, bridge, Foster’s Dip, Momo Corner, Dogleg and Recaro Corner. The pit straight follows the historical racing direction, with the pit complex outside the circuit.
+
+The entire board has rolling terrain. The crossover has distinct upper and lower driving surfaces, an open underpass and a supported bridge deck. Route progress, barriers and car collisions respect the separate levels. Elevation shapes are an interpretation for miniature gameplay, not surveyed data; the HUD therefore displays section names without invented elevation measurements. No artificial jump ramps are added.
+
+Research references: [RacingCircuits.info’s final Grand Prix map and circuit history](https://www.racingcircuits.info/australasia/australia/oran-park.html), [The Race Torque’s bridge history](https://www.theracetorque.com/2021/05/what-happened-to-the-oran-park-bridge/) and [iRacing’s description of its scanned Oran Park recreation](https://www.iracing.com/broekman-shines-at-oran-park/). The geometry is authored for this game; source map artwork is not bundled.
+
 ## Game modes and controls
 
 - **Circuits:** three laps against three CPU racers; the player starts fourth.
 - **Carpet City:** collect all 12 unique blocks before the rivals, in any order. Each racer has an independent collection set.
 - **Boost:** locks when charge reaches the low threshold. A cyan pickup fully refills and unlocks boost. Pickups are shared and respawn after 3–5 seconds: one on each small circuit, three on each large course. Cyan boost pads are reusable and grant the equivalent temporary boost without multiplying an in-car boost. Completing a circuit lap also refills boost; there is no timed recharge. Catch-up speed adds 4% per place behind the leader, up to 12% for fourth place.
+- **Low Clutter:** optional in race setup and the pause menu, remembered on this browser. Hides race stats, opponent labels, minimap and secondary notifications while racing, and moves a compact boost meter to the top corner. Touch controls, pause and the on-demand Carpet City map remain available. Full results are shown after racing.
 - **Visual style:** select Polished 3D or Cartoon / Cel shaded in the main menu. Both use a black background and dynamic lighting.
 
 | Action | Keyboard |
@@ -94,13 +105,7 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 ## Source layout
 
 - `dist/`: maintained HTML, CSS, JavaScript modules and vendored Three.js. **Do not delete or regenerate this directory as disposable build output.**
-- `dist/race.mjs`: circuit layouts, physics and CPU racing.
-- `dist/real-courses.mjs`: Mount Panorama layout and shared terrain elevations.
-- `dist/panorama-world.mjs`: mountain terrain, scenery and circuit landmarks.
-- `dist/oran-*.mjs`, `dist/albert-*.mjs`: Oran Park and Albert Park layouts, terrain and scenery.
-- `dist/real-driving.mjs`: Real World tyre grip, braking, steering and hill forces.
-- `dist/track-boundaries.mjs`: continuous barriers and road edges without folded inside corners.
-- `dist/vehicle-physics.mjs`: shared vehicle hitboxes, collision responses and speed-dependent steering.
+- `dist/race.mjs`: circuit physics and CPU racing.
 - `dist/carpet-*.mjs`: carpet layout, scenery, collection race and rival navigation.
 - `dist/boost-*.mjs`: boost rules, contested pickup handling and visuals.
 - `dist/visual-style.mjs`, `dist/course-lights.mjs`: rendering styles and lighting.
@@ -108,7 +113,7 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 - `wrangler.jsonc`: independent Cloudflare deployment configuration.
 - `.openai/hosting.json`: the existing OpenAI Sites project connection. It is not a Cloudflare account credential and is not used by Wrangler. A separate Sites project must use its own Sites-managed project ID.
 
-This repository contains the game published as Sites version 31, source commit `1b5c2ba28312a5ce3f432b749720a5db2e73dfbe`. It includes Mount Panorama, Oran Park and Albert Park; their terrain, scenery and runoff areas; the Low Clutter phone UI; improved Real World handling and grip; and continuous barriers with smooth glancing collisions and corrected inside corners. The gameplay assets and checks match the published source. Uploading this repository does not establish automatic two-way synchronisation with Sites. Keep later source changes aligned explicitly when maintaining both hosting destinations.
+This repository begins with the game published from Sites source commit `056de021e41dab072a833dcb0cd1b01128cbbf1d`, plus the deployment documentation and tooling. Uploading this repository does not establish automatic two-way synchronisation with Sites. Keep later source changes aligned explicitly when maintaining both hosting destinations.
 
 ## Verification and maintenance
 

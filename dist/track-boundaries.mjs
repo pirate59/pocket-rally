@@ -1,3 +1,4 @@
+import {extraRunoff} from './barrier-modes.mjs';
 const wrap=(i,n)=>(i%n+n)%n;
 const cross=(ax,az,bx,bz)=>ax*bz-az*bx;
 // Trim the small loops made when an inside offset exceeds a corner's radius.
@@ -31,17 +32,20 @@ function joinNormal(points,i){
  const len=Math.hypot(ax+bx,az+bz);if(len<1e-5)return{x:bx,z:bz};
  return{x:(ax+bx)/len,z:(az+bz)/len};
 }
-export function makeBarriers(nodes,course){
+export function makeBarriers(nodes,course,track={course}){
  if(!course.walls)return[];const n=nodes.length,result=[];
  for(const side of[-1,1]){
-  const runoff=nodes.map((p,i)=>Math.max(.28,course.barrierOffsetAt?.(i/n,side,p)??course.barrierOffset??.18));
+  const base=nodes.map((p,i)=>Math.max(.28,course.barrierOffsetAt?.(i/n,side,p)??course.barrierOffset??.18)),extra=nodes.map((p,i)=>extraRunoff(track,p,i,base[i]));
+  // Ease narrowing over a long approach, never an abrupt kink by a ramp.
+  for(let pass=0;pass<2;pass++)for(const direction of[1,-1])for(let k=0;k<n;k++){const i=direction>0?k:n-1-k,j=wrap(i-direction,n),d=Math.hypot(nodes[i].x-nodes[j].x,nodes[i].z-nodes[j].z);extra[i]=Math.min(extra[i],extra[j]+d*.06);}
+  const runoff=base.map((v,i)=>v+extra[i]);
   const points=offsetBoundary(nodes,(p,i)=>side*(course.width/2+runoff[i])),normals=points.map((p,i)=>joinNormal(points,i));
   const valid=i=>!nodes[i].gap&&!nodes[(i+1)%n].gap&&!(course.intersection&&Math.hypot(nodes[i].x,nodes[i].z)<(course.intersection.radius||course.width*.88));
   for(let i=0;i<n;i++){
    const j=(i+1)%n,a=points[i],b=points[j],len=Math.hypot(b.x-a.x,b.z-a.z);if(!valid(i)||len<1e-5)continue;
    const normal={x:(b.z-a.z)/len,z:-(b.x-a.x)/len};
    const miter=q=>{const f=1/Math.max(.5,Math.abs(q.x*normal.x+q.z*normal.z));return{x:q.x*f,z:q.z*f};};
-   result.push({index:i,side,ax:a.x,az:a.z,ay:a.y,bx:b.x,bz:b.z,by:b.y,height:.62,width:.34,runoff:runoff[i],normalA:normals[i],normalB:normals[j],miterA:miter(normals[i]),miterB:miter(normals[j]),joinedA:valid(wrap(i-1,n)),joinedB:valid(j)});
+   result.push({barrierMode:course.barrierMode,index:i,side,ax:a.x,az:a.z,ay:a.y,bx:b.x,bz:b.z,by:b.y,height:.62,width:.34,runoff:runoff[i],normalA:normals[i],normalB:normals[j],miterA:miter(normals[i]),miterB:miter(normals[j]),joinedA:valid(wrap(i-1,n)),joinedB:valid(j)});
   }
  }
  return result;

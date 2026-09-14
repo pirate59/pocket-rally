@@ -1,6 +1,16 @@
 export const BOOST_LOW=.08;
+export const boostRecordSuffix=options=>options.manual&&options.ground?'':'-boost-'+Number(options.manual)+Number(options.ground);
+export function configureBoosts(run,options){
+ run.boostOptions={manual:options.manual!==false,ground:options.ground!==false};
+ for(const c of run.cars){c.manualBoostEnabled=run.boostOptions.manual;c.groundBoostEnabled=run.boostOptions.ground;}
+ if(!run.boostOptions.manual)run.boostPickups=[];
+ if(!run.boostOptions.ground)run.boostPads=[];
+ return run;
+}
 export function assignCatchup(cars,ranking){const ordered=ranking||[...cars].sort((a,b)=>(b.progress??0)-(a.progress??0));ordered.forEach((car,place)=>{car.place=place+1;car.catchup=1+place*.04})}
 export function useBoost(car,wanted,dt){
+ wanted=!!wanted&&car.manualBoostEnabled!==false;
+ if(car.groundBoostEnabled===false)car.padBoostTimer=0;
  if(car.boost<=BOOST_LOW){car.boost=0;car.boostLocked=true}
  const padActive=(car.padBoostTimer||0)>0;car.padBoostTimer=Math.max(0,(car.padBoostTimer||0)-dt);car.padBoostCooldown=Math.max(0,(car.padBoostCooldown||0)-dt);
  car.boosting=padActive||!!wanted&&!car.boostLocked&&car.boost>BOOST_LOW;

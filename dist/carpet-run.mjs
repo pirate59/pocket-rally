@@ -1,10 +1,10 @@
 import {engineClass,engineMultiplier,isBraking} from './engine-classes.mjs';
 import {steeringRate,resolveVehicles,resolveObstacle} from './vehicle-physics.mjs';
-import {referenceCarpetLayout} from './carpet-layout.mjs';
+import {rugPoint,referenceCarpetLayout} from './carpet-layout.mjs';
 import {CarpetNavigation} from './carpet-rivals.mjs';
 import {BOOST_AI,useBoost,makeBoostPickups,makeBoostPads,boostStart,collectBoosts,collectBoostPads,assignCatchup} from './boost-system.mjs';
 // Free-roaming collection mode: no lap counters or ordered checkpoints.
-export const CARPET_COURSE={name:'Carpet City Collect',tag:'THE PLAYROOM SCAVENGER RACE',desc:'Three rivals. Twelve different blocks each.<br>Be first to collect the full set, in any order.',tags:['12 UNIQUE BLOCKS','3 RIVALS','MOVING TRAFFIC'],type:'car',mode:'collect',revision:3,mapScale:3,mapSize:[207,299],bounds:[100,146],width:10.6,color:0x82b59b,road:0x526271};
+export const CARPET_COURSE={name:'Carpet City Collect',tag:'THE PLAYROOM SCAVENGER RACE',desc:'Three rivals. Twelve different blocks each.<br>Be first to collect the full set, in any order.',tags:['12 UNIQUE BLOCKS','3 RIVALS','MOVING TRAFFIC'],type:'car',mode:'collect',revision:4,mapScale:3,mapSize:[207,299],bounds:[100,146],width:10.6,color:0x82b59b,road:0x526271};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const angle=v=>Math.atan2(Math.sin(v),Math.cos(v));
 export function makeCarpetTrack(course=CARPET_COURSE){
@@ -14,6 +14,15 @@ export function nearestCarpetRoad(track,x,z){
  let best={d:Infinity};
  for(const [a,b] of track.edges){const p=track.nodes[a],q=track.nodes[b],dx=q.x-p.x,dz=q.z-p.z,len=Math.hypot(dx,dz),t=clamp(((x-p.x)*dx+(z-p.z)*dz)/(len*len),0,1),px=p.x+dx*t,pz=p.z+dz*t,d=Math.hypot(x-px,z-pz);if(d<best.d)best={d,x:px,z:pz,heading:Math.atan2(dx,dz)}}
  return best;
+}
+// Use the same parking footprints and park polygons as the visible rug.
+export function carpetSurface(track,x,z){
+ for(const p of track.parking||[]){const centre=rugPoint(p.x,p.y);if(Math.abs(x-centre.x)<=p.cols*19*.55/2&&Math.abs(z-centre.z)<=p.rows*20*.55/2)return{paved:true,soil:false,y:.185};}
+ const island=track.roundabout;if(island&&Math.hypot(x-island.x,z-island.z)<island.islandRadius)return{paved:false,soil:true,y:.335};
+ if(nearestCarpetRoad(track,x,z).d<track.course.width/2)return{paved:true,soil:false,y:.185};
+ for(const poly of track.zones||[]){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a.z>z)!==(b.z>z)&&x<(b.x-a.x)*(z-a.z)/(b.z-a.z)+a.x)inside=!inside;}if(inside)return{paved:false,soil:true,y:.045};}
+ // Unmarked grey forecourts and open paved areas are hard surfaces too.
+ return{paved:true,soil:false,y:-.015};
 }
 export const TRAFFIC_LEVELS={easy:{count:8,speed:7},medium:{count:12,speed:9},hard:{count:16,speed:11}};
 const vehicle=(id,color,x,z,heading=0)=>({vehicleType:id>3?'traffic':'car',id,color,name:id?'Traffic '+id:'YOU',x,y:.13,z,heading,vx:0,vz:0,vy:0,speed:0,braking:false,index:0,progress:0,boost:1,airborne:false,boosting:false,drifting:false,finish:null,flash:0,respawns:0,hazard:''});
@@ -46,7 +55,7 @@ export class CarpetRun{
  recover(c){const p=nearestCarpetRoad(this.track,c.x,c.z);let heading=p.heading;if(Math.abs(angle(c.heading-heading))>Math.PI/2)heading+=Math.PI;let x=p.x,z=p.z;for(const offset of[0,4,-4,8,-8]){const q=nearestCarpetRoad(this.track,p.x+Math.sin(heading)*offset,p.z+Math.cos(heading)*offset);if(this.cars.slice(1).every(o=>Math.hypot(q.x-o.x,q.z-o.z)>3)){x=q.x;z=q.z;break}}Object.assign(c,{x,z,y:.13,heading,vx:0,vz:0,speed:0,braking:false,flash:1.8});c.respawns++}
  step(dt,input={}){
   if(this.paused||this.winner!==null)return;dt=Math.min(.04,dt);if(this.countdown>0){this.countdown-=dt;return}this.time+=dt;this.collisionCooldown=Math.max(0,this.collisionCooldown-dt);const boostStarts=boostStart(this.racers);assignCatchup(this.racers,this.ranking());
-  const c=this.cars[0],road=nearestCarpetRoad(this.track,c.x,c.z),onRoad=road.d<this.track.course.width/2,throttle=(input.forward?1:0)-(input.reverse?1:0),steer=(input.left?1:0)-(input.right?1:0),brake=!!input.brake;
+  const c=this.cars[0],onRoad=carpetSurface(this.track,c.x,c.z).paved,throttle=clamp(Number(input.forward)||0,0,1)-clamp(Number(input.reverse)||0,0,1),steer=clamp(Number(input.left)||0,0,1)-clamp(Number(input.right)||0,0,1),brake=!!input.brake;
   c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);c.flash=Math.max(0,c.flash-dt);c.braking=isBraking(throttle,brake,c.speed);c.drifting=brake&&Math.abs(c.speed)>5;useBoost(c,input.boost&&throttle>0&&c.speed>2,dt);
   c.heading+=steer*steeringRate(Math.hypot(c.vx,c.vz),brake,'car',c.engineScale)*Math.sign(c.speed||1)*dt;
   const fx=Math.sin(c.heading),fz=Math.cos(c.heading),lateral=c.vx*fz-c.vz*fx,grip=brake?1.7:8.2;c.vx-=fz*lateral*Math.min(1,grip*dt);c.vz+=fx*lateral*Math.min(1,grip*dt);

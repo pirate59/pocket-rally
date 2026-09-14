@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {COURSES,makeTrack} from '../dist/race.mjs';
+import {SANDOWN,sandownPoint,sandownRelief} from '../dist/sandown.mjs';
+const track=makeTrack(SANDOWN);assert.equal(COURSES.at(-1).id,'sandown');assert.equal(track.sections.length,14);
+const crest=track.nodes[track.sections.find(s=>s.name.startsWith('Turn 6')).index],bottom=track.nodes[track.sections.find(s=>s.name.startsWith('Turn 9')).index];
+assert(crest.y>bottom.y+2.5,'The esses must descend from the crest');
+assert(track.terrainHeight(crest.x,crest.z)>track.terrainHeight(bottom.x,bottom.z)+2.5,'The entire board carries the hill');
+assert(track.nodes[0].tx>.9,'Start travels along the pit straight toward Turn 1');
+assert(track.nodes.reduce((a,p,i)=>{const q=track.nodes[(i+1)%track.n];return a+p.x*q.z-q.x*p.z;},0)<0,'The course runs anticlockwise on the map');
+assert(track.nodes.every(p=>Number.isFinite(p.y)&&!p.gap),'No artificial jumps or invalid elevations');
+for(const p of track.nodes)assert(!track.isWater(p.x,p.z),'Lakes must stay clear of the road');
+const lake=sandownPoint(920,480);assert(track.isWater(lake.x,lake.z));
+assert(sandownRelief(crest.x,crest.z)>3);
+console.log('PASS: Sandown direction, main straight, crest/descent, board relief and lakes');
