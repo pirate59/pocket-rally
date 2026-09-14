@@ -1,8 +1,10 @@
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Bumper, wheel and hull extents in the model's local X/Z axes.
 export const VEHICLE_BOUNDS={car:{halfWidth:1,halfLength:1.53,height:1.4},buggy:{halfWidth:1,halfLength:1.53,height:1.9},boat:{halfWidth:.96,halfLength:2,height:1.2},traffic:{halfWidth:1,halfLength:1.5,height:1.5}};
-export function steeringRate(speed,brake=false,type='car'){
- const v=Math.abs(speed),falloff=1/(1+(Math.max(0,v-8)/16)**2);
+export function steeringRate(speed,brake=false,type='car',engineScale=1){
+ // Match Commercial's response at the same proportion of class top speed.
+ // Boost still moves further up this curve and reduces steering authority.
+ const v=Math.abs(speed)/engineScale,falloff=1/(1+(Math.max(0,v-8)/16)**2);
  return (brake?2.5:1.85)*(type==='boat'?.88:1)*clamp(v/5,0,1)*falloff;
 }
 function box(c){const b=VEHICLE_BOUNDS[c.vehicleType]||VEHICLE_BOUNDS.car,s=Math.sin(c.heading),t=Math.cos(c.heading);return {...b,x:c.x,z:c.z,halfWidth:b.halfWidth*(c.hitboxScaleX||1),halfLength:b.halfLength*(c.hitboxScaleZ||1),axes:[{x:t,z:-s},{x:s,z:t}]}}

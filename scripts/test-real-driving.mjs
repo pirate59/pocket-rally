@@ -36,7 +36,8 @@ const slip=Math.abs(Math.atan2(corner.vx,corner.vz)-corner.heading);
 assert(slip<.13,'An ordinary powered corner should stay planted rather than slide sideways');
 console.log('PASS: braking, corner radius, runoff, slopes, airborne control, boost momentum and reverse');
 if(process.argv.includes('--races'))for(const course of COURSES.filter(c=>c.realWorld&&(!process.argv.includes('--albert-only')||c.id==='albert-park')))for(const difficulty of ['easy','medium','hard']){
- const race=new Race(makeTrack(course),difficulty);race.countdown=0;race.cars[0].finish=0;
+ const engine=process.argv.find(a=>a.startsWith('--engine='))?.split('=')[1]||'commercial';
+ const race=new Race(makeTrack(course),difficulty,engine);race.countdown=0;race.cars[0].finish=0;
  globalThis.document={createElement:()=>({getContext:()=>({fillRect(){},fillText(){}})})};
  const world=new THREE.Group(),addCollider=(x,z,r,y=0)=>race.obstacles.push({x,z,r,y});
  (course.id==='albert-park'?buildAlbertWorld:course.id==='oran-park'?buildOranWorld:buildPanoramaWorld)({world,track:race.track,addCollider});

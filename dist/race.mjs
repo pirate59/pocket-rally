@@ -1,3 +1,4 @@
+import {engineClass,engineMultiplier,isBraking} from './engine-classes.mjs';
 import {ORAN_PARK,makeOranTerrain} from './oran-park.mjs';
 import {ALBERT_PARK,makeAlbertTerrain} from './albert-park.mjs';
 import {makeBarriers} from './track-boundaries.mjs';
@@ -49,11 +50,11 @@ export const DIFFICULTIES={
  hard:{cruise:20,boostSpeed:29,lateral:35,reserve:.42,line:.65,steering:2.6}
 };
 export class Race{
- constructor(track,difficulty='medium'){this.difficulty=DIFFICULTIES[difficulty]?difficulty:'medium';this.track=track;this.time=0;this.countdown=3.4;this.finished=[];this.obstacles=[];this.paused=false;this.boostPickups=makeBoostPickups(track);this.boostPads=makeBoostPads(track);this.cars=COLORS.map((color,i)=>{const slot=i===0?3:i-1;let progress=-8-slot*5,index=wrap(progress,track.n),p=track.nodes[index],lane=(slot%2?1:-1)*1.25;return{vehicleType:track.course.type,id:i,color,name:NAMES[i],x:p.x+p.tz*lane,z:p.z-p.tx*lane,y:p.y,heading:p.heading,vx:0,vz:0,vy:0,speed:0,progress,index,lastSafe:progress,boost:1,boostLocked:false,boostLap:0,catchup:1,padBoostTimer:0,padBoostCooldown:0,airborne:false,boosting:false,drifting:false,offTime:0,stuck:0,respawns:0,finish:null,flash:0};});}
- recover(c){let pos=c.lastSafe-3,p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];if(p.gap){pos-=20;p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];}Object.assign(c,{x:p.x,z:p.z,y:p.y+.15,heading:p.heading,vx:p.tx*4,vz:p.tz*4,vy:0,steerAngle:0,yawRate:0,index:wrap(Math.floor(pos),this.track.n),progress:pos,airborne:false,offTime:0,stuck:0,flash:1.8});c.respawns++;}
+ constructor(track,difficulty='medium',engine='commercial'){this.engineClass=engineClass(engine);this.difficulty=DIFFICULTIES[difficulty]?difficulty:'medium';this.track=track;this.time=0;this.countdown=3.4;this.finished=[];this.obstacles=[];this.paused=false;this.boostPickups=makeBoostPickups(track);this.boostPads=makeBoostPads(track);this.cars=COLORS.map((color,i)=>{const slot=i===0?3:i-1;let progress=-8-slot*5,index=wrap(progress,track.n),p=track.nodes[index],lane=(slot%2?1:-1)*1.25;return{vehicleType:track.course.type,engineScale:engineMultiplier(this.engineClass),braking:false,id:i,color,name:NAMES[i],x:p.x+p.tz*lane,z:p.z-p.tx*lane,y:p.y,heading:p.heading,vx:0,vz:0,vy:0,speed:0,progress,index,lastSafe:progress,boost:1,boostLocked:false,boostLap:0,catchup:1,padBoostTimer:0,padBoostCooldown:0,airborne:false,boosting:false,drifting:false,offTime:0,stuck:0,respawns:0,finish:null,flash:0};});}
+ recover(c){let pos=c.lastSafe-3,p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];if(p.gap){pos-=20;p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];}Object.assign(c,{x:p.x,z:p.z,y:p.y+.15,heading:p.heading,vx:p.tx*4,vz:p.tz*4,vy:0,steerAngle:0,yawRate:0,braking:false,index:wrap(Math.floor(pos),this.track.n),progress:pos,airborne:false,offTime:0,stuck:0,flash:1.8});c.respawns++;}
  step(dt,input={}){
   if(this.paused)return;dt=Math.min(dt,.04);if(this.countdown>0){this.countdown-=dt;return}this.time+=dt;const boostStarts=boostStart(this.cars);assignCatchup(this.cars,this.ranking());
-  for(const c of this.cars){if(c.finish!==null)continue;const tr=this.track,co=tr.course;let near=nearest(tr,c.x,c.z,c.y,c.index),p=near.p,onRoad=near.d<co.width/2,throttle=0,steer=0,brake=false,boost=false;
+  for(const c of this.cars){if(c.finish!==null)continue;const tr=this.track,co=tr.course,engine=c.engineScale;let near=nearest(tr,c.x,c.z,c.y,c.index),p=near.p,onRoad=near.d<co.width/2,throttle=0,steer=0,brake=false,boost=false;
    if(c.id===0){throttle=(input.forward?1:0)-(input.reverse?1:0);steer=(input.left?1:0)-(input.right?1:0);brake=!!input.brake;boost=!!input.boost;}else{
     const skill=DIFFICULTIES[this.difficulty],speed=Math.max(0,c.speed),at=d=>tr.nodes[wrap(near.i+Math.round(d/tr.spacing),tr.n)];
     const look=3.4+speed*(co.realWorld?.32:.22),target=at(look),bend=angle(at(look+4).heading-at(Math.max(0,look-4)).heading);
@@ -67,22 +68,22 @@ export class Race{
     const driftX=c.vx-p.tx*speed,driftZ=c.vz-p.tz*speed;
     const targetHeading=Math.atan2(target.x+target.tz*c.aiLane-c.x-driftX*.15,target.z-target.tx*c.aiLane-c.z-driftZ*.15),err=angle(targetHeading-c.heading);
     steer=clamp(err*skill.steering,-1,1);
-    let desired=skill.boostSpeed-(c.id-1)*.15;
+    let desired=(skill.boostSpeed-(c.id-1)*.15)*engine;
     // Preview upcoming curvature and brake before the bend, using the same vehicle limits as the player.
     const cornerGrip=co.realWorld?REAL_GRIP*{easy:.53,medium:.60,hard:.68}[this.difficulty]:skill.lateral;
-    for(let d=0;d<=(co.realWorld?42:28);d+=3){const curvature=Math.abs(angle(at(d+3).heading-at(d-3).heading))/6,cornerSpeed=Math.sqrt(cornerGrip*(co.type==='boat'?.85:1)/Math.max(.001,curvature));desired=Math.min(desired,Math.sqrt(cornerSpeed*cornerSpeed+2*(co.realWorld?10:14)*Math.max(0,d-3)));}
+    for(let d=0;d<=(co.realWorld?42:28)*engine;d+=3){const curvature=Math.abs(angle(at(d+3).heading-at(d-3).heading))/6,cornerSpeed=Math.sqrt(cornerGrip*(co.type==='boat'?.85:1)/Math.max(.001,curvature));desired=Math.min(desired,Math.sqrt(cornerSpeed*cornerSpeed+2*(co.realWorld?10:14)*engine*Math.max(0,d-3)));}
     if(Math.abs(err)>.65||near.d>co.width/2-1)desired=Math.min(desired,11);
-    boost=desired>skill.cruise+(this.difficulty==='hard'?.4:1)&&Math.abs(err)<(this.difficulty==='hard'?.25:.20)&&!c.boostLocked&&c.boost>(c.boosting?BOOST_LOW:{easy:.18,medium:.12,hard:BOOST_LOW}[this.difficulty])&&onRoad;
-    if(!boost)desired=Math.min(desired,skill.cruise);
-    if(!co.realWorld)desired*=c.catchup;throttle=clamp((desired-speed)*.8+(co.realWorld?.35:desired*.64/14),-.65,1);c.aiError=err;
+    boost=desired>skill.cruise*engine+(this.difficulty==='hard'?.4:1)&&Math.abs(err)<(this.difficulty==='hard'?.25:.20)&&!c.boostLocked&&c.boost>(c.boosting?BOOST_LOW:{easy:.18,medium:.12,hard:BOOST_LOW}[this.difficulty])&&onRoad;
+    if(!boost)desired=Math.min(desired,skill.cruise*engine);
+    if(!co.realWorld)desired*=c.catchup;throttle=clamp((desired-speed)/engine*.8+(co.realWorld?.35:desired/engine*.64/14),-.65,1);c.aiError=err;
 
    }
-   c.flash=Math.max(0,c.flash-dt);c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);c.drifting=brake&&Math.abs(c.speed)>5;useBoost(c,boost&&throttle>0&&c.speed>2,dt);
+   c.flash=Math.max(0,c.flash-dt);c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);c.braking=isBraking(throttle,brake,c.speed);c.drifting=brake&&Math.abs(c.speed)>5;useBoost(c,boost&&throttle>0&&c.speed>2,dt);
    if(co.realWorld)driveRealCar(c,{throttle,steer,brake,onRoad,p,track:tr},dt);else{
-   const grip=co.type==='boat'?3.3:brake?1.7:8.2,turn=steeringRate(Math.hypot(c.vx,c.vz),brake,co.type);c.heading+=steer*turn*Math.sign(c.speed||1)*dt*(c.airborne?.48:1);
+   const grip=co.type==='boat'?3.3:brake?1.7:8.2,turn=steeringRate(Math.hypot(c.vx,c.vz),brake,co.type,engine);c.heading+=steer*turn*Math.sign(c.speed||1)*dt*(c.airborne?.48:1);
    const fx=Math.sin(c.heading),fz=Math.cos(c.heading),lateral=c.vx*fz-c.vz*fx;c.vx-=fz*lateral*Math.min(1,grip*dt);c.vz+=fx*lateral*Math.min(1,grip*dt);
-   let accel=throttle*(throttle<0&&c.speed>0?24:14)*(c.airborne?.25:1)*c.catchup;if(c.boosting)accel+=20*c.catchup;if(co.realWorld&&!c.airborne)accel-=p.slope*8;c.vx+=fx*accel*dt;c.vz+=fz*accel*dt;
-   let drag=onRoad?.64:co.offroadDrag??(co.type==='boat'?1.1:2.2);if(brake)drag+=.9;const damping=Math.exp(-drag*dt);c.vx*=damping;c.vz*=damping;let mag=Math.hypot(c.vx,c.vz),max=(c.boosting?29:20)*c.catchup;if(mag>max){c.vx*=max/mag;c.vz*=max/mag}if(c.speed<-7){c.vx*=.94;c.vz*=.94}
+   let accel=throttle*(throttle<0&&c.speed>0?24:14)*(c.airborne?.25:1)*c.catchup*engine;if(c.boosting)accel+=20*c.catchup*engine;if(co.realWorld&&!c.airborne)accel-=p.slope*8;c.vx+=fx*accel*dt;c.vz+=fz*accel*dt;
+   let drag=onRoad?.64:co.offroadDrag??(co.type==='boat'?1.1:2.2);if(brake)drag+=.9;const damping=Math.exp(-drag*dt);c.vx*=damping;c.vz*=damping;let mag=Math.hypot(c.vx,c.vz),max=(c.boosting?29:20)*c.catchup*engine;if(mag>max){c.vx*=max/mag;c.vz*=max/mag}if(c.speed<-7*engine){c.vx*=.94;c.vz*=.94}
    }
    c.hazard='';if(!c.airborne)for(const h of tr.hazards){const dx=c.x-h.x,dz=c.z-h.z;if(Math.abs(dx*h.tx+dz*h.tz)<h.length/2&&Math.abs(dx*h.tz-dz*h.tx)<h.width/2&&c.y<.7){c.hazard=h.label;c.vx+=h.fx*dt;c.vz+=h.fz*dt;if(h.kind==='stream'){c.vx*=Math.exp(-dt*.25);c.vz*=Math.exp(-dt*.25);}}}
    c.x+=c.vx*dt;c.z+=c.vz*dt;
