@@ -1,10 +1,11 @@
 import * as THREE from './three.module.mjs';
+import {HighDetail} from './high-detail.mjs';
 
 // Modify the existing materials in place so textures, water animation and
 // camera-occlusion fading retain their original material references.
 export class VisualStyle{
- constructor(){this.mode='polished';this.uniform={value:0};this.edges=[];this.edgeGeometry=new Map();this.motion=new WeakMap()}
- set(mode){this.mode=mode==='cartoon'?'cartoon':'polished';this.uniform.value=this.mode==='cartoon'?1:0;for(const e of this.edges)e.line.visible=!!this.uniform.value}
+ constructor(){this.detail=new HighDetail();this.mode='polished';this.uniform={value:0};this.edges=[];this.edgeGeometry=new Map();this.motion=new WeakMap()}
+ set(mode){this.mode=['cartoon','high'].includes(mode)?mode:'polished';this.detail.set(this.mode==='high');this.uniform.value=this.mode==='cartoon'?1:0;for(const e of this.edges)e.line.visible=!!this.uniform.value}
  prepare(world,vehicles){
   const candidates=[],vehicleMeshes=new Set();for(const car of vehicles)car.traverse(o=>{if(o.isMesh)vehicleMeshes.add(o)});
   world.traverse(o=>{if(!o.isMesh)return;for(const m of Array.isArray(o.material)?o.material:[o.material])this.material(m);
@@ -12,6 +13,7 @@ export class VisualStyle{
    o.geometry.computeBoundingBox();const size=o.geometry.boundingBox.getSize(new THREE.Vector3());if(size.y<.24||Math.max(size.x,size.y,size.z)<1.1)return;
    candidates.push({o,priority:(vehicleMeshes.has(o)?1e6:0)+size.x*size.y*size.z});
   });
+  this.detail.prepare(world,vehicles);
   // Bounded extra draws on mobile. Rounded forms also get shader silhouettes.
   for(const {o}of candidates.sort((a,b)=>b.priority-a.priority).slice(0,120)){
    let geometry=this.edgeGeometry.get(o.geometry);if(!geometry){geometry=new THREE.EdgesGeometry(o.geometry,35);this.edgeGeometry.set(o.geometry,geometry)}
@@ -44,5 +46,5 @@ if(cartoonStyle > 0.5){
   model.scale.set(1.1+squash,1.06-squash-boost*.09+(car.airborne?.12:0),1+boost*.13);model.position.y+=Math.max(0,bounce)+squash*.15;model.rotateZ(Math.max(-.16,Math.min(.16,-turn*.035))*moving);model.rotateX(bounce*.4);
  }
  update(){for(const {line,source}of this.edges){line.visible=this.mode==='cartoon'&&source.visible!==false;line.material.opacity=source.opacity*.85}}
- clear(){for(const {line}of this.edges){line.removeFromParent();line.material.dispose()}for(const g of this.edgeGeometry.values())g.dispose();this.edges=[];this.edgeGeometry.clear();this.motion=new WeakMap()}
+ clear(){this.detail.clear();for(const {line}of this.edges){line.removeFromParent();line.material.dispose()}for(const g of this.edgeGeometry.values())g.dispose();this.edges=[];this.edgeGeometry.clear();this.motion=new WeakMap()}
 }
