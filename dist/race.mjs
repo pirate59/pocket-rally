@@ -8,19 +8,28 @@ import {PANORAMA,makePanoramaTerrain} from './real-courses.mjs';
 import {steeringRate,resolveVehicles,resolveObstacle,resolveWall} from './vehicle-physics.mjs';
 import {CARPET_COURSE} from './carpet-run.mjs';
 import {grandCourses} from './grand-courses.mjs';
+import {makeCourse,EXAMPLES} from './course-pieces.mjs';
 import {BOOST_LOW,BOOST_AI,useBoost,refillLap,makeBoostPickups,makeBoostPads,boostStart,collectBoosts,collectBoostPads,assignCatchup} from './boost-system.mjs';
 // An exact rounded outline avoids spline overshoot and pinched barrier joins.
 function desktopLoop(){
  const points=[],line=(ax,az,bx,bz)=>{const n=Math.ceil(Math.hypot(bx-ax,bz-az)/.2);for(let i=0;i<n;i++)points.push([ax+(bx-ax)*i/n,0,az+(bz-az)*i/n])},arc=(x,z,start)=>{for(let i=0;i<95;i++){const a=start+i/95*Math.PI/2;points.push([x+12*Math.cos(a),0,z+12*Math.sin(a)])}};
  line(-26,-22,27,-22);arc(27,-10,-Math.PI/2);line(39,-10,39,10);arc(27,10,0);line(27,22,-27,22);arc(-27,10,Math.PI/2);line(-39,10,-39,-10);arc(-27,-10,Math.PI);line(-27,-22,-26,-22);return points;
 }
+// A compact stadium kept well inland (|x|<=35, |z|<=18) so the shoreline and
+// dune bands can sit outside the track with clear, unobstructed margin.
+function beachLoop(){
+ const points=[],line=(ax,az,bx,bz)=>{const n=Math.ceil(Math.hypot(bx-ax,bz-az)/.2);for(let i=0;i<n;i++)points.push([ax+(bx-ax)*i/n,0,az+(bz-az)*i/n])},arc=(x,z,start)=>{for(let i=0;i<95;i++){const a=start+i/95*Math.PI/2;points.push([x+10*Math.cos(a),0,z+10*Math.sin(a)])}};
+ line(-24,-18,25,-18);arc(25,-8,-Math.PI/2);line(35,-8,35,8);arc(25,8,0);line(25,18,-25,18);arc(-25,8,Math.PI/2);line(-35,8,-35,-8);arc(-25,-8,Math.PI);line(-25,-18,-24,-18);return points;
+}
 export const COURSES = [
- {name:'Desktop Dash',revision:3,tag:'THE DESKTOP SPRINT CIRCUIT',desc:'Sweep around the stationery islands.<br>Two ruler jumps with long, straight landings.',tags:['TWIN RULER JUMPS','SWEEPING BENDS','LONG LANDINGS'],type:'car',color:0xc49360,road:0x303d43,width:6.8,bounds:[44,31],walls:true,barrierOffset:.34,jumpAnchors:[[-12,-22],[12,22]],sampledPath:true,points:desktopLoop()},
- {name:'Bathwater Bay',revision:2,tag:'THE BUBBLE GRAND PRIX',desc:'Follow the soap-bubble channels.<br>Skim the flyover. Clear the soap jumps.',tags:['SOAP JUMPS','WATER FLYOVER','BUBBLE CHICANES'],type:'boat',color:0x258ee5,road:0x238bed,width:6.8,bounds:[44,31],walls:true,gap:[.36,.376],rampStart:.338,extraJumps:[{rampStart:.815,gap:[.838,.854]}],points:[[-34,0,-18],[-23,0,-25],[-10,0,-20],[0,0,0],[12,0,20],[24,0,25],[38,0,18],[39,0,6],[28,0,3],[27,0,-6],[38,0,-13],[31,0,-25],[17,0,-25],[8,2,-14],[0,5.5,0],[-10,2,15],[-20,0,24],[-34,0,24],[-40,0,12],[-31,0,7],[-20,0,6],[-23,0,-5],[-36,0,-6]]},
- {name:'Backyard Wilds',revision:2,tag:'THE WILD GARDEN RALLY',desc:'Carve through the roots and toys.<br>Two dirt jumps. One timber skybridge.',tags:['ROOT CHICANES','TWIN DIRT JUMPS','TIMBER SKYBRIDGE'],type:'buggy',color:0x688849,road:0x755333,width:6.1,bounds:[44,31],walls:true,gap:[.335,.351],rampStart:.313,extraJumps:[{rampStart:.782,gap:[.804,.820]}],points:[[-35,0,-18],[-21,0,-25],[-8,0,-24],[-2,1,-14],[6,0,-7],[19,0,-18],[32,0,-24],[39,0,-13],[29,0,-5],[25,0,5],[37,0,11],[34,0,24],[21,0,25],[11,2,14],[0,6,0],[-11,2,-5],[-23,0,2],[-17,0,14],[-24,0,25],[-38,0,23],[-40,0,10],[-33,0,3],[-39,0,-6]]}
-
+ {name:'Desktop Dash',revision:3,tag:'THE DESKTOP SPRINT CIRCUIT',desc:'Sweep around the stationery islands.<br>Two ruler jumps with long, straight landings.',tags:['TWIN RULER JUMPS','SWEEPING BENDS','LONG LANDINGS'],type:'car',color:0xc49360,road:0x303d43,width:6.8,bounds:[44,31],walls:true,barrierOffset:.34,jumpAnchors:[[-12,-22],[12,22]],sampledPath:true,deco:'table',points:desktopLoop()},
+ {name:'Bathwater Bay',revision:2,tag:'THE BUBBLE GRAND PRIX',desc:'Follow the soap-bubble channels.<br>Skim the flyover. Clear the soap jumps.',tags:['SOAP JUMPS','WATER FLYOVER','BUBBLE CHICANES'],type:'boat',color:0x258ee5,road:0x238bed,width:6.8,bounds:[44,31],walls:true,gap:[.36,.376],rampStart:.338,extraJumps:[{rampStart:.815,gap:[.838,.854]}],deco:'bath',points:[[-34,0,-18],[-23,0,-25],[-10,0,-20],[0,0,0],[12,0,20],[24,0,25],[38,0,18],[39,0,6],[28,0,3],[27,0,-6],[38,0,-13],[31,0,-25],[17,0,-25],[8,2,-14],[0,5.5,0],[-10,2,15],[-20,0,24],[-34,0,24],[-40,0,12],[-31,0,7],[-20,0,6],[-23,0,-5],[-36,0,-6]]},
+ {name:'Backyard Wilds',revision:2,tag:'THE WILD GARDEN RALLY',desc:'Carve through the roots and toys.<br>Two dirt jumps. One timber skybridge.',tags:['ROOT CHICANES','TWIN DIRT JUMPS','TIMBER SKYBRIDGE'],type:'buggy',color:0x688849,road:0x755333,width:6.1,bounds:[44,31],walls:true,gap:[.335,.351],rampStart:.313,extraJumps:[{rampStart:.782,gap:[.804,.820]}],deco:'garden',points:[[-35,0,-18],[-21,0,-25],[-8,0,-24],[-2,1,-14],[6,0,-7],[19,0,-18],[32,0,-24],[39,0,-13],[29,0,-5],[25,0,5],[37,0,11],[34,0,24],[21,0,25],[11,2,14],[0,6,0],[-11,2,-5],[-23,0,2],[-17,0,14],[-24,0,25],[-38,0,23],[-40,0,10],[-33,0,3],[-39,0,-6]]},
+ {name:'Sandy Shores',revision:1,tag:'THE COASTAL SPRINT CIRCUIT',desc:'Race the dune bowl, well back from the water.<br>Launch off two sand jumps on the long straights.',tags:['DUNE JUMPS','SWEEPING BENDS','CLEAR SIGHTLINES'],type:'buggy',color:0xe0793f,road:0xdac697,width:6.6,bounds:[44,31],walls:true,barrierOffset:.34,jumpAnchors:[[-8,-18],[8,18]],sampledPath:true,deco:'beach',points:beachLoop()}
 ];
 COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA,ORAN_PARK,ALBERT_PARK,SANDOWN);
+// Piece-built example courses from the imagined-course building blocks.
+COURSES.push(...Object.values(EXAMPLES).map(example=>makeCourse(example.spec,example)));
 // Boost pickups replace regenerating boost; keep earlier time records separate.
 COURSES.forEach(course=>{course.revision=(course.revision||0)+2+(course.realWorld?1:0)});
 export const COLORS=['#ef5b3f','#f6c64b','#6e87e7','#88bf73'];

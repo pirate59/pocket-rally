@@ -109,6 +109,7 @@ Touch controls appear on phones and tablets. A WebGL 2-capable browser with hard
 - `dist/carpet-*.mjs`: carpet layout, scenery, collection race and rival navigation.
 - `dist/boost-*.mjs`: boost rules, contested pickup handling and visuals.
 - `dist/visual-style.mjs`, `dist/course-lights.mjs`: rendering styles and lighting.
+- `dist/course-pieces.mjs`: connectable course pieces (straights, 45/90/135° turns, hairpins, elevation, jumps) for generating imagined courses, with staged layout → validation → barriers → decorations. Reference: `docs/course-pieces.md`.
 - `scripts/check.mjs`: syntax, local-import and static-asset checks.
 - `wrangler.jsonc`: independent Cloudflare deployment configuration.
 - `.openai/hosting.json`: the existing OpenAI Sites project connection. It is not a Cloudflare account credential and is not used by Wrangler. A separate Sites project must use its own Sites-managed project ID.

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {COURSES,makeTrack} from '../dist/race.mjs';
 import {SANDOWN,sandownPoint,sandownRelief} from '../dist/sandown.mjs';
-const track=makeTrack(SANDOWN);assert.equal(COURSES.at(-1).id,'sandown');assert.equal(track.sections.length,14);
+const track=makeTrack(SANDOWN);assert(COURSES.some(c=>c.id==='sandown'));assert.equal(track.sections.length,14);
 const crest=track.nodes[track.sections.find(s=>s.name.startsWith('Turn 6')).index],bottom=track.nodes[track.sections.find(s=>s.name.startsWith('Turn 9')).index];
 assert(crest.y>bottom.y+2.5,'The esses must descend from the crest');
 assert(track.terrainHeight(crest.x,crest.z)>track.terrainHeight(bottom.x,bottom.z)+2.5,'The entire board carries the hill');

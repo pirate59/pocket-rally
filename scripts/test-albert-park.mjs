@@ -4,7 +4,7 @@ import {ALBERT_PARK,albertPoint,lakeContains} from '../dist/albert-park.mjs';
 import {buildAlbertWorld} from '../dist/albert-world.mjs';
 import * as THREE from '../dist/three.module.mjs';
 const track=makeTrack(ALBERT_PARK),race=new Race(track);
-assert.equal(COURSES[9].id,'albert-park');
+assert(COURSES.some(c=>c.id==='albert-park'));
 assert.equal(track.sections.length,15);
 assert(track.nodes[0].tx<0&&track.nodes[0].tz<0,'Start line heads northwest toward Turn 1');
 let signedArea=0;
