@@ -33,5 +33,7 @@ export function buildAdelaideWorld({world,track,addCollider}){
  for(let i=0;i<1500&&trees.length<180;i++){const x=(random()-.5)*308,z=(random()-.5)*355;if(track.terrainDistance(x,z)<12||x>5&&z<-13||x>-20&&z>30||Math.hypot((x-lake.x)/16,(z-lake.z)/23)<1.2)continue;trees.push({x,z,h:3+random()*2});}
  const tg=new THREE.CylinderGeometry(.22,.35,1,7),lg2=new THREE.SphereGeometry(1,12,8);owned.add(tg);owned.add(lg2);const trunks=new THREE.InstancedMesh(tg,trunk,trees.length),leaves=new THREE.InstancedMesh(lg2,leaf,trees.length),dummy=new THREE.Object3D();
  trees.forEach((p,i)=>{const y=ground(p.x,p.z);dummy.position.set(p.x,y+p.h/2,p.z);dummy.scale.set(1,p.h,1);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);dummy.position.y=y+p.h;dummy.scale.set(1.8,2.1,1.8);dummy.updateMatrix();leaves.setMatrixAt(i,dummy.matrix);addCollider(p.x,p.z,.35,y);});group.add(trunks,leaves);
+ // Final safety pass: no scenery mesh may occupy the drivable corridor.
+ group.updateMatrixWorld(true);group.traverse(o=>{if(!o.isMesh||o===terrain||o===water)return;const p=o.getWorldPosition(new THREE.Vector3());if(track.terrainDistance(p.x,p.z)<track.course.width/2+1.8)o.visible=false;});
  return{dispose(){for(const r of owned)r.dispose();group.removeFromParent();}};
 }
