@@ -7,6 +7,7 @@ import {buildPanoramaWorld} from '../dist/panorama-world.mjs';
 import {buildOranWorld} from '../dist/oran-world.mjs';
 import {buildAlbertWorld} from '../dist/albert-world.mjs';
 import {buildSandownWorld} from '../dist/sandown-world.mjs';
+import {buildAdelaideWorld} from '../dist/adelaide-world.mjs';
 import {CourseLights} from '../dist/course-lights.mjs';
 const dt=1/90;
 const car=(speed=20)=>({x:0,z:0,heading:0,vx:0,vz:speed,speed,catchup:1});
@@ -37,12 +38,12 @@ const corner=run(car(20),1,{steer:.35,throttle:1});
 const slip=Math.abs(Math.atan2(corner.vx,corner.vz)-corner.heading);
 assert(slip<.13,'An ordinary powered corner should stay planted rather than slide sideways');
 console.log('PASS: braking, corner radius, runoff, slopes, airborne control, boost momentum and reverse');
-if(process.argv.includes('--races'))for(const course of COURSES.filter(c=>c.realWorld&&(!process.argv.includes('--albert-only')||c.id==='albert-park')&&(!process.argv.includes('--sandown-only')||c.id==='sandown')))for(const difficulty of ['easy','medium','hard']){
+if(process.argv.includes('--races'))for(const course of COURSES.filter(c=>c.realWorld&&(!process.argv.includes('--adelaide-only')||c.id==='adelaide')&&(!process.argv.includes('--albert-only')||c.id==='albert-park')&&(!process.argv.includes('--sandown-only')||c.id==='sandown')))for(const difficulty of ['easy','medium','hard']){
  const engine=process.argv.find(a=>a.startsWith('--engine='))?.split('=')[1]||'commercial';
  const race=new Race(makeTrack(withBarriers(course,process.argv.includes('--race-barriers')?'race':'bumper')),difficulty,engine);race.countdown=0;race.cars[0].finish=0;
  globalThis.document={createElement:()=>({getContext:()=>({fillRect(){},fillText(){}})})};
  const world=new THREE.Group(),addCollider=(x,z,r,y=0)=>race.obstacles.push({x,z,r,y});
- (course.id==='sandown'?buildSandownWorld:course.id==='albert-park'?buildAlbertWorld:course.id==='oran-park'?buildOranWorld:buildPanoramaWorld)({world,track:race.track,addCollider});
+ (course.id==='adelaide'?buildAdelaideWorld:course.id==='sandown'?buildSandownWorld:course.id==='albert-park'?buildAlbertWorld:course.id==='oran-park'?buildOranWorld:buildPanoramaWorld)({world,track:race.track,addCollider});
  const lights=new CourseLights(world,race.track,[],[],race.obstacles,addCollider);
  for(let i=0;i<360/dt&&!race.cars.slice(1).every(c=>c.finish!==null);i++)race.step(dt);
  const result=race.cars.slice(1).map(c=>({id:c.id,time:c.finish,respawns:c.respawns,lap:(c.progress/race.track.n).toFixed(2)}));
