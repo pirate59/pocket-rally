@@ -27,6 +27,18 @@ export class Cockpit{
   this.instrument=new THREE.Group();this.instrument.position.set(0,-.295,-1.095);this.scene.add(this.instrument);
   mesh(new THREE.PlaneGeometry(.57,.185),new THREE.MeshBasicMaterial({map:this.texture,transparent:true,toneMapped:false}),0,0,0,this.instrument);
   for(const side of[-1,1]){mesh(new THREE.BoxGeometry(.18,.07,.015),mat(0x090f15),side*.49,-.38,-1.087);for(let i=0;i<5;i++)mesh(new THREE.BoxGeometry(.13,.003,.006),trim,side*.49,-.356-i*.012,-1.076);}
+  this.mirrors=[];this.lastMirrorTime=-Infinity;
+  for(const side of[-1,1]){
+   const target=new THREE.WebGLRenderTarget(256,128,{depthBuffer:true,stencilBuffer:false});
+   const camera=new THREE.PerspectiveCamera(58,2,.08,180),housing=new THREE.Group();this.scene.add(housing);
+   mesh(new THREE.BoxGeometry(.37,.205,.04),dark,0,0,-.025,housing);
+   mesh(new THREE.BoxGeometry(.346,.18,.012),trim,0,0,0,housing);
+   const glass=new THREE.PlaneGeometry(.328,.164),uv=glass.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,1-uv.getX(i));
+   mesh(glass,new THREE.MeshBasicMaterial({map:target.texture}),0,0,.009,housing);
+   mesh(new THREE.BoxGeometry(.06,.045,.025),dark,side*.19,-.065,-.03,housing);
+   this.mirrors.push({side,target,camera,housing});
+  }
+  this.mirrorPosition=new THREE.Vector3();this.mirrorAim=new THREE.Vector3();
  }
  update(speed,steer,dt,aspect){
   this.angle+=(steer*1.1-this.angle)*(1-Math.exp(-dt*12));this.wheel.rotation.z=this.angle;
@@ -35,11 +47,25 @@ export class Cockpit{
   // Keep the full wheel visible on portrait phones without raising the dash.
   this.wheel.scale.setScalar(Math.min(.82,aspect/.65));
   this.instrument.scale.setScalar(Math.min(1,aspect/.55));
+  for(const {side,housing}of this.mirrors){const scale=Math.min(1,aspect*.9);housing.scale.setScalar(scale);housing.position.set(side*(aspect*.577-.205*scale),aspect<.75?-.06:-.17,-1);}
   const value=Math.round(Math.abs(speed)*5.1);if(value===this.speed)return;this.speed=value;
   const c=this.ctx;c.clearRect(0,0,512,192);c.beginPath();c.roundRect(3,3,506,186,65);c.fillStyle='#53616b';c.fill();c.beginPath();c.roundRect(8,8,496,176,61);c.fillStyle='#080e14';c.fill();
   const start=Math.PI*1.08,end=Math.PI*1.92;
   for(let i=0;i<=30;i++){const a=start+(end-start)*i/30,major=i%5===0;c.beginPath();c.moveTo(256+Math.cos(a)*218,170+Math.sin(a)*145);c.lineTo(256+Math.cos(a)*(major?199:208),170+Math.sin(a)*(major?128:136));c.strokeStyle=i<value/10?'#c6f77b':'#647784';c.lineWidth=major?4:2;c.stroke();}
   c.fillStyle='#eaf4ee';c.textAlign='center';c.font='bold 76px monospace';c.fillText(String(value),256,126);c.font='21px sans-serif';c.fillStyle='#9caeb7';c.fillText('KM/H',256,157);c.font='17px sans-serif';c.fillText('0',56,157);c.fillText('300',455,157);this.texture.needsUpdate=true;
+ }
+ updateMirrors(renderer,worldScene,vehicle,time,world){
+  // Two small live views at 30 Hz; reuse the main view's shadow map.
+  if(this.mirrorWorld===world&&time-this.lastMirrorTime<1/30)return;
+  this.mirrorWorld=world;this.lastMirrorTime=time;
+  const previous=renderer.getRenderTarget(),auto=renderer.autoClear,shadows=renderer.shadowMap.autoUpdate;
+  renderer.autoClear=true;renderer.shadowMap.autoUpdate=false;
+  try{for(const {side,target,camera}of this.mirrors){
+   this.mirrorPosition.set(-side*1.02,1.05,.18).applyQuaternion(vehicle.quaternion).add(vehicle.position);
+   this.mirrorAim.set(-side*4,1.0,-16).applyQuaternion(vehicle.quaternion).add(vehicle.position);
+   camera.position.copy(this.mirrorPosition);camera.up.set(0,1,0);camera.lookAt(this.mirrorAim);
+   renderer.setRenderTarget(target);renderer.render(worldScene,camera);
+  }}finally{renderer.setRenderTarget(previous);renderer.autoClear=auto;renderer.shadowMap.autoUpdate=shadows;}
  }
  render(renderer){const auto=renderer.autoClear;renderer.autoClear=false;renderer.clearDepth();renderer.render(this.scene,this.camera);renderer.autoClear=auto;}
 }

@@ -332,7 +332,9 @@ function frame(ms){requestAnimationFrame(frame);let t=ms/1000,dt=Math.min(.05,la
  const interior=mode!=='menu'&&cameraMode==='cockpit',player=carModels[0],visible=player.visible;
  if(interior)player.visible=false;
  if(mode!=='menu'&&perspectiveView()&&player.userData.playerTag)player.userData.playerTag.visible=false;
- renderer.render(scene,activeCamera);player.visible=visible;
+ renderer.render(scene,activeCamera);
+ if(interior)cockpit.updateMirrors(renderer,scene,player,t,world);
+ player.visible=visible;
  if(interior){const steer=Math.max(Number(!!(keys.KeyA||keys.ArrowLeft||touchControls.keys.KeyA)),pad.left||0)-Math.max(Number(!!(keys.KeyD||keys.ArrowRight||touchControls.keys.KeyD)),pad.right||0);cockpit.update(race.cars[0].speed,steer,race.paused?0:dt,innerWidth/innerHeight);cockpit.render(renderer);}
 }
 function configureRaceUI(){
