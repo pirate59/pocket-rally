@@ -93,6 +93,7 @@ body[data-visual-style="cartoon"] .menu,body[data-visual-style="cartoon"] .cours
 @media(max-width:700px) and (min-height:600px){body.real-world-mode .menu{left:20px;right:20px;top:auto;bottom:80px;width:auto;max-height:48dvh}body.real-world-mode .menu h1{font-size:34px;margin:0 0 12px}body.real-world-mode .menu .intro,body.real-world-mode .menu>.eyebrow{display:none}body.real-world-mode .course{padding:11px 13px}body.real-world-mode .course-info{display:none}}
 
 .oran-park-mode .minimap{width:150px;height:133px}@media(max-width:540px){.oran-park-mode .minimap{width:105px;height:93px}}
+.hidden-valley-mode .minimap{width:188px;height:114px}@media(max-width:540px){.hidden-valley-mode .minimap{width:130px;height:79px}}
 .albert-park-mode .minimap{width:150px;height:170px}@media(max-width:540px){.albert-park-mode .minimap{width:105px;height:119px}}
 
 /* Optional quiet racing view. Driving targets retain their full touch area. */

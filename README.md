@@ -1,6 +1,6 @@
 # Pocket Rally
 
-A browser-based miniature racer with eight circuits and a free-route Carpet City collection race. Includes keyboard and mobile touch controls, three CPU rivals, polished and cel-shaded graphics, dynamic lighting, and shared boost refills.
+A browser-based miniature racer with twelve circuits and a free-route Carpet City collection race. Includes keyboard and mobile touch controls, three CPU rivals, polished and cel-shaded graphics, dynamic lighting, and shared boost refills.
 
 [Play the Sites version](https://pocket-rally.baaraamyou.chatgpt.site)
 
@@ -80,6 +80,14 @@ Choose **Real World → Oran Park Raceway** for the 2.620 km Grand Prix configur
 The entire board has rolling terrain. The crossover has distinct upper and lower driving surfaces, an open underpass and a supported bridge deck. Route progress, barriers and car collisions respect the separate levels. Elevation shapes are an interpretation for miniature gameplay, not surveyed data; the HUD therefore displays section names without invented elevation measurements. No artificial jump ramps are added.
 
 Research references: [RacingCircuits.info’s final Grand Prix map and circuit history](https://www.racingcircuits.info/australasia/australia/oran-park.html), [The Race Torque’s bridge history](https://www.theracetorque.com/2021/05/what-happened-to-the-oran-park-bridge/) and [iRacing’s description of its scanned Oran Park recreation](https://www.iracing.com/broekman-shines-at-oran-park/). The geometry is authored for this game; source map artwork is not bundled.
+
+### Hidden Valley Raceway
+
+Choose **Real World → Hidden Valley Raceway** for the 2.870 km Darwin circuit, run clockwise. The lap opens with the 1.1 km main straight into the tight Turn 1, climbs through the fast Turn 2-3-4 esses, brakes hard for Turn 5 and the slow Turn 6 hairpin in its natural amphitheatre, then runs the technical second half through Ducati, the 8/9 kink, the crest at Turn 10 and the Turn 12-13-14 flicks onto the straight.
+
+The whole board undulates. Relief carries the climb through the esses, the drop into the Turn 6 bowl and the rise to the Turn 10 crest. It interprets the published driver guides rather than surveyed data, so the HUD shows section names without invented elevation measurements. No artificial jump ramps are added. Scenery is a miniature of the wider Hidden Valley Motorsports Complex: pit garages and race control beside the main straight, the drag strip alongside it, grassed spectator terraces instead of a grandstand, the dirt speedway, the kart and motocross tracks, and Top End savanna woodland with termite mounds.
+
+The geometry is authored for this game from published circuit facts and lap guides; no map artwork is traced or bundled. Sources are listed in [docs/hidden-valley-sources.md](docs/hidden-valley-sources.md).
 
 ## Game modes and controls
 

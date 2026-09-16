@@ -3,6 +3,7 @@ import {ORAN_PARK,makeOranTerrain} from './oran-park.mjs';
 import {ALBERT_PARK,makeAlbertTerrain} from './albert-park.mjs';
 import {SANDOWN,makeSandownTerrain} from './sandown.mjs';
 import {ADELAIDE,makeAdelaideTerrain} from './adelaide.mjs';
+import {HIDDEN_VALLEY,makeHiddenValleyTerrain} from './hidden-valley.mjs';
 import {makeBarriers} from './track-boundaries.mjs';
 import {driveRealCar,REAL_GRIP} from './real-driving.mjs';
 import {PANORAMA,makePanoramaTerrain} from './real-courses.mjs';
@@ -21,7 +22,7 @@ export const COURSES = [
  {name:'Backyard Wilds',revision:2,tag:'THE WILD GARDEN RALLY',desc:'Carve through the roots and toys.<br>Two dirt jumps. One timber skybridge.',tags:['ROOT CHICANES','TWIN DIRT JUMPS','TIMBER SKYBRIDGE'],type:'buggy',color:0x688849,road:0x755333,width:6.1,bounds:[44,31],walls:true,gap:[.335,.351],rampStart:.313,extraJumps:[{rampStart:.782,gap:[.804,.820]}],points:[[-35,0,-18],[-21,0,-25],[-8,0,-24],[-2,1,-14],[6,0,-7],[19,0,-18],[32,0,-24],[39,0,-13],[29,0,-5],[25,0,5],[37,0,11],[34,0,24],[21,0,25],[11,2,14],[0,6,0],[-11,2,-5],[-23,0,2],[-17,0,14],[-24,0,25],[-38,0,23],[-40,0,10],[-33,0,3],[-39,0,-6]]}
 
 ];
-COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA,ORAN_PARK,ALBERT_PARK,SANDOWN,ADELAIDE);
+COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA,ORAN_PARK,ALBERT_PARK,SANDOWN,ADELAIDE,HIDDEN_VALLEY);
 // Boost pickups replace regenerating boost; keep earlier time records separate.
 COURSES.forEach(course=>{course.revision=(course.revision||0)+2+(course.realWorld?1:0)});
 export const COLORS=['#ef5b3f','#f6c64b','#6e87e7','#88bf73'];
@@ -38,7 +39,7 @@ export function makeTrack(course){
  const total=lengths.at(-1),nodes=[],n=course.mapScale?Math.ceil(total/.5):640,jumps=course.jumpAnchors?course.jumpAnchors.map(([x,z])=>{let k=0,best=Infinity;for(let i=0;i<raw.length;i++){let d=Math.hypot(raw[i][0]-x,raw[i][2]-z);if(d<best){best=d;k=i;}}let crest=lengths[k];return{rampStart:(crest-12)/total,gap:[crest/total,(crest+3.4)/total]};}):[{rampStart:course.rampStart,gap:course.gap},...(course.extraJumps||[])];let j=0;
  for(let i=0;i<n;i++){let d=i/n*total;while(lengths[j+1]<d)j++;let t=(d-lengths[j])/(lengths[j+1]-lengths[j]),v=raw[j].map((a,k)=>a+(raw[j+1][k]-a)*t),u=i/n;v[1]=Math.max(0,v[1]);for(const jump of jumps)if(u>=jump.rampStart&&u<jump.gap[0])v[1]+=2.1*(u-jump.rampStart)/(jump.gap[0]-jump.rampStart);nodes.push({x:v[0],y:v[1]+.13,z:v[2],gap:jumps.some(jump=>u>=jump.gap[0]&&u<jump.gap[1]),ramp:jumps.some(jump=>u>=jump.rampStart&&u<jump.gap[0])});}
  for(let i=0;i<n;i++){let a=nodes[wrap(i-1,n)],b=nodes[(i+1)%n],q=nodes[i],len=Math.hypot(b.x-a.x,b.z-a.z);q.tx=(b.x-a.x)/len;q.tz=(b.z-a.z)/len;q.heading=Math.atan2(q.tx,q.tz);q.slope=(b.y-a.y)/len;}
- const track={nodes,n,length:total,spacing:total/n,course,jumps};if(course.id==='adelaide')makeAdelaideTerrain(track);else if(course.id==='sandown')makeSandownTerrain(track);else if(course.id==='albert-park')makeAlbertTerrain(track);else if(course.id==='oran-park')makeOranTerrain(track);else if(course.realWorld)makePanoramaTerrain(track);
+ const track={nodes,n,length:total,spacing:total/n,course,jumps};if(course.id==='hidden-valley')makeHiddenValleyTerrain(track);else if(course.id==='adelaide')makeAdelaideTerrain(track);else if(course.id==='sandown')makeSandownTerrain(track);else if(course.id==='albert-park')makeAlbertTerrain(track);else if(course.id==='oran-park')makeOranTerrain(track);else if(course.realWorld)makePanoramaTerrain(track);
  const barriers=makeBarriers(nodes,course,track);
  // Seat moved walls on the surrounding terrain while preserving bridge decks.
  if(course.extraRunoff&&course.realWorld)for(const w of barriers){for(const end of['a','b']){const i=end==='a'?w.index:(w.index+1)%n;if(!track.isBridgeIndex?.(i))w[end+'y']=Math.min(w[end+'y'],track.terrainHeight(w[end+'x'],w[end+'z'])+.13);}}
