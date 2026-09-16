@@ -5,6 +5,8 @@ import {SANDOWN,makeSandownTerrain} from './sandown.mjs';
 import {ADELAIDE,makeAdelaideTerrain} from './adelaide.mjs';
 import {HIDDEN_VALLEY,makeHiddenValleyTerrain} from './hidden-valley.mjs';
 import {HOMEBUSH,makeHomebushTerrain} from './homebush.mjs';
+import {PHILLIP_ISLAND,makeIslandTerrain} from './phillip-island.mjs';
+import {driveMotorcycle} from './motorcycle-physics.mjs';
 import {makeBarriers,makeIslandWalls} from './track-boundaries.mjs';
 import {driveRealCar,REAL_GRIP} from './real-driving.mjs';
 import {PANORAMA,makePanoramaTerrain} from './real-courses.mjs';
@@ -30,7 +32,7 @@ export const COURSES = [
  {name:'Backyard Wilds',revision:2,tag:'THE WILD GARDEN RALLY',desc:'Carve through the roots and toys.<br>Two dirt jumps. One timber skybridge.',tags:['ROOT CHICANES','TWIN DIRT JUMPS','TIMBER SKYBRIDGE'],type:'buggy',color:0x688849,road:0x755333,width:6.1,bounds:[44,31],walls:true,gap:[.335,.351],rampStart:.313,extraJumps:[{rampStart:.782,gap:[.804,.820]}],deco:'garden',points:[[-35,0,-18],[-21,0,-25],[-8,0,-24],[-2,1,-14],[6,0,-7],[19,0,-18],[32,0,-24],[39,0,-13],[29,0,-5],[25,0,5],[37,0,11],[34,0,24],[21,0,25],[11,2,14],[0,6,0],[-11,2,-5],[-23,0,2],[-17,0,14],[-24,0,25],[-38,0,23],[-40,0,10],[-33,0,3],[-39,0,-6]]},
  {name:'Sandy Shores',revision:1,tag:'THE COASTAL SPRINT CIRCUIT',desc:'Race the dune bowl, well back from the water.<br>Launch off two sand jumps on the long straights.',tags:['DUNE JUMPS','SWEEPING BENDS','CLEAR SIGHTLINES'],type:'buggy',color:0xe0793f,road:0xdac697,width:6.6,bounds:[44,31],walls:true,barrierOffset:.34,jumpAnchors:[[-8,-18],[8,18]],sampledPath:true,deco:'beach',points:beachLoop()}
 ];
-COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA,ORAN_PARK,ALBERT_PARK,SANDOWN,ADELAIDE,HIDDEN_VALLEY,HOMEBUSH);
+COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA,ORAN_PARK,ALBERT_PARK,SANDOWN,ADELAIDE,HIDDEN_VALLEY,HOMEBUSH,PHILLIP_ISLAND);
 // Piece-built example courses from the imagined-course building blocks.
 COURSES.push(...Object.values(EXAMPLES).map(example=>makeCourse(example.spec,example)));
 // Boost pickups replace regenerating boost; keep earlier time records separate.
@@ -54,7 +56,7 @@ export function makeTrack(course){
  // Rail nodes keep the heading of the road they were entered from, so the
  // plan-view checks, minimap and chase camera treat a loop as a straight.
  for(let i=0;i<n;i++){const q=nodes[i];if(!q.rail)continue;let k=i;while(nodes[wrap(k,n)].rail)k--;const entry=nodes[wrap(k,n)];q.tx=entry.tx;q.tz=entry.tz;q.heading=entry.heading;q.railStart=!nodes[wrap(i-1,n)].rail;q.railEnd=!nodes[(i+1)%n].rail;}
- const track={nodes,n,length:total,spacing:total/n,course,jumps};if(course.id==='homebush')makeHomebushTerrain(track);else if(course.id==='hidden-valley')makeHiddenValleyTerrain(track);else if(course.id==='adelaide')makeAdelaideTerrain(track);else if(course.id==='sandown')makeSandownTerrain(track);else if(course.id==='albert-park')makeAlbertTerrain(track);else if(course.id==='oran-park')makeOranTerrain(track);else if(course.realWorld)makePanoramaTerrain(track);
+ const track={nodes,n,length:total,spacing:total/n,course,jumps};if(course.id==='phillip-island')makeIslandTerrain(track);else if(course.id==='homebush')makeHomebushTerrain(track);else if(course.id==='hidden-valley')makeHiddenValleyTerrain(track);else if(course.id==='adelaide')makeAdelaideTerrain(track);else if(course.id==='sandown')makeSandownTerrain(track);else if(course.id==='albert-park')makeAlbertTerrain(track);else if(course.id==='oran-park')makeOranTerrain(track);else if(course.realWorld)makePanoramaTerrain(track);
  const barriers=makeBarriers(nodes,course,track);
  barriers.push(...makeIslandWalls(nodes,course));
  // Seat moved walls on the surrounding terrain while preserving bridge decks.
@@ -75,7 +77,7 @@ export class Race{
  constructor(track,difficulty='medium',engine='commercial'){this.engineClass=engineClass(engine);this.difficulty=DIFFICULTIES[difficulty]?difficulty:'medium';this.track=track;this.time=0;this.countdown=3.4;this.finished=[];this.obstacles=[];this.paused=false;this.boostPickups=makeBoostPickups(track);this.boostPads=makeBoostPads(track);this.cars=COLORS.map((color,i)=>{const slot=i===0?3:i-1;let progress=-8-slot*5,index=wrap(progress,track.n),p=track.nodes[index],lane=(slot%2?1:-1)*1.25;return{vehicleType:track.course.type,engineScale:engineMultiplier(this.engineClass),braking:false,id:i,color,name:NAMES[i],x:p.x+p.tz*lane,z:p.z-p.tx*lane,y:p.y,heading:p.heading,vx:0,vz:0,vy:0,speed:0,progress,index,lastSafe:progress,boost:1,boostLocked:false,boostLap:0,catchup:1,padBoostTimer:0,padBoostCooldown:0,airborne:false,boosting:false,drifting:false,offTime:0,stuck:0,respawns:0,finish:null,flash:0};});}
  recover(c){let pos=c.lastSafe-3,p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];if(p.gap){pos-=20;p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];}while(p.rail){pos-=1;p=this.track.nodes[wrap(Math.floor(pos),this.track.n)];}c.rail=false;
   // Inside a split road the centreline is the island barrier: use a lane.
-  const lane=p.island>0?p.island+(p.width/2-p.island)/2:0;Object.assign(c,{x:p.x+p.tz*lane,z:p.z-p.tx*lane,y:p.y+.15,heading:p.heading,vx:p.tx*4,vz:p.tz*4,vy:0,steerAngle:0,yawRate:0,braking:false,index:wrap(Math.floor(pos),this.track.n),progress:pos,airborne:false,offTime:0,stuck:0,flash:1.8});c.respawns++;}
+  const lane=p.island>0?p.island+(p.width/2-p.island)/2:0;Object.assign(c,{x:p.x+p.tz*lane,z:p.z-p.tx*lane,y:p.y+.15,heading:p.heading,vx:p.tx*4,vz:p.tz*4,vy:0,lean:0,steerAngle:0,yawRate:0,braking:false,index:wrap(Math.floor(pos),this.track.n),progress:pos,airborne:false,offTime:0,stuck:0,flash:1.8});c.respawns++;}
  step(dt,input={}){
   if(this.paused)return;dt=Math.min(dt,.04);if(this.countdown>0){this.countdown-=dt;return}this.time+=dt;const boostStarts=boostStart(this.cars);assignCatchup(this.cars,this.ranking());
   for(const c of this.cars){if(c.finish!==null)continue;const tr=this.track,co=tr.course,engine=c.engineScale;
@@ -111,7 +113,7 @@ export class Race{
 
    }
    c.wallPenaltyCooldown=Math.max(0,(c.wallPenaltyCooldown||0)-dt);c.flash=Math.max(0,c.flash-dt);c.speed=c.vx*Math.sin(c.heading)+c.vz*Math.cos(c.heading);c.braking=isBraking(throttle,brake,c.speed);c.drifting=brake&&Math.abs(c.speed)>5;useBoost(c,boost&&throttle>0&&c.speed>2,dt);
-   if(co.realWorld)driveRealCar(c,{throttle,steer,brake,onRoad,p,track:tr},dt);else{
+   if(co.type==='motorcycle')driveMotorcycle(c,{throttle,steer,brake,onRoad,p,track:tr},dt);else if(co.realWorld)driveRealCar(c,{throttle,steer,brake,onRoad,p,track:tr},dt);else{
    const grip=co.type==='boat'?3.3:brake?1.7:8.2,turn=steeringRate(Math.hypot(c.vx,c.vz),brake,co.type,engine);c.heading+=steer*turn*Math.sign(c.speed||1)*dt*(c.airborne?.48:1);
    const fx=Math.sin(c.heading),fz=Math.cos(c.heading),lateral=c.vx*fz-c.vz*fx;c.vx-=fz*lateral*Math.min(1,grip*dt);c.vz+=fx*lateral*Math.min(1,grip*dt);
    let accel=throttle*(throttle<0&&c.speed>0?24:14)*(c.airborne?.25:1)*c.catchup*engine;if(c.boosting)accel+=20*c.catchup*engine;if(co.realWorld&&!c.airborne)accel-=p.slope*8;c.vx+=fx*accel*dt;c.vz+=fz*accel*dt;

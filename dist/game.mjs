@@ -11,6 +11,9 @@ import {buildSandownWorld} from './sandown-world.mjs';
 import {buildAdelaideWorld} from './adelaide-world.mjs';
 import {buildHiddenValleyWorld} from './hidden-valley-world.mjs';
 import {buildHomebushWorld} from './homebush-world.mjs';
+import {makeMotorcycle} from './motorcycle.mjs';
+import {BikeCockpit} from './bike-cockpit.mjs';
+import {buildIslandWorld} from './island-world.mjs';
 import {offsetBoundary,wallMeshData} from './track-boundaries.mjs';
 import {buildPanoramaWorld} from './panorama-world.mjs';
 import {makeCarpetTrack,CarpetRun} from './carpet-run.mjs';
@@ -30,7 +33,7 @@ const scene=new THREE.Scene(),camera=new THREE.OrthographicCamera(-50,50,35,-35,
 const chaseCamera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.15,250),chaseTarget=new THREE.Vector3();
 const CAMERA_MODES=['close','distant','chase','nose','roof','cockpit'];
 const perspectiveView=()=>['chase','nose','roof','cockpit'].includes(cameraMode);
-const cockpit=new Cockpit();
+const cockpit=new Cockpit(),bikeCockpit=new BikeCockpit();
 scene.add(new THREE.HemisphereLight(0xfaffed,0x516047,1.5));const sun=new THREE.DirectionalLight(0xffedca,2.7);sun.position.set(-28,65,28);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-46;sun.shadow.camera.right=46;sun.shadow.camera.top=39;sun.shadow.camera.bottom=-39;sun.shadow.camera.near=1;sun.shadow.camera.far=140;sun.shadow.bias=-.0006;sun.shadow.normalBias=.04;scene.add(sun,sun.target);
 const fill=new THREE.DirectionalLight(0xd9edff,.55);fill.position.set(32,19,-24);scene.add(fill);
 let world=new THREE.Group();scene.add(world);let selected=0,track,race,mode='menu',cameraMode='close',cpuDifficulty='medium',selectedEngine='commercial',selectedBarriers='bumper',optionsFromPause=false,cameraHeight=24,carModels=[],colliders=[],animated=[],particles=[],tyreMarks=null,soundEnabled=false,audioCtx,engineOsc,engineGain,lastTime=0,accumulator=0,menuClock=0,lastBeep=4,lastFinish=false,shownMessage='',messageUntil=0;
@@ -91,7 +94,7 @@ function beachCrab(x,z,random){let g=new THREE.Group();world.add(g);g.position.s
  for(let s of[-1,1]){barBetween(new THREE.Vector3(s*.75,.85,.55),new THREE.Vector3(s*.95,1.05,.85),.1,.1,0xe0644a,g);sphere(.24,0xe0644a,s*1.02,1.1,.92,g);}
  for(let s of[-1,1])for(let i=0;i<3;i++)barBetween(new THREE.Vector3(s*.55,.5,-.4+i*.4),new THREE.Vector3(s*1.25,.05,-.5+i*.5),.08,.08,0xc2452e,g);
  addCollider(x,z,.9);animated.push({g,type:'bug',x,z,phase:random()*6});return g;}
-function makeVehicle(color,type){const g=new THREE.Group();let wheels=[];const dark=0x203d42,chrome=material(0xbac4c0,.25,.8);
+function makeVehicle(color,type){if(type==='motorcycle')return makeMotorcycle(color);const g=new THREE.Group();let wheels=[];const dark=0x203d42,chrome=material(0xbac4c0,.25,.8);
  if(type==='boat'){
   const shape=new THREE.Shape();shape.moveTo(-.78,-1.35);shape.lineTo(.78,-1.35);shape.quadraticCurveTo(1.1,.8,0,1.85);shape.quadraticCurveTo(-1.1,.8,-.78,-1.35);const geom=new THREE.ExtrudeGeometry(shape,{depth:.45,bevelEnabled:true,bevelSize:.15,bevelThickness:.15,bevelSegments:3,steps:1});geom.rotateX(-Math.PI/2);geom.rotateY(Math.PI);mesh(geom,color,0,.25,0,g,.27,.2);bevel(1.15,.2,1.5,0xf7ead5,0,.76,.03,g,.08);bevel(.91,.4,.85,dark,0,.96,-.1,g,.1);box(.13,.025,1.1,0xf5eedc,0,.89,-1.03,g);box(.13,.025,.65,0xf5eedc,0,.67,1.01,g);bevel(.5,.35,.4,0x314a44,0,.47,-1.65,g,.05);box(.75,.1,.25,chrome,0,.96,.52,g);
  }else{
@@ -359,8 +362,8 @@ function buildGrandWorld(random){
 }
 
 function clearWorld(){tyreMarks?.dispose();tyreMarks=null;carModels.forEach(disposeBrakeLights);panoramaWorld?.dispose();panoramaWorld=null;visualStyle.clear();boostWorld?.dispose();boostWorld=null;courseLights?.dispose();courseLights=null;grandScenery?.dispose();grandScenery=null;railFader=null;carpetWorld=null;world.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&!Array.isArray(o.material)&&o.material.map){o.material.map.dispose();o.material.dispose();}});scene.remove(world);world=new THREE.Group();scene.add(world);carModels=[];animated=[];colliders=[];particles=[];}
-function setupCourse(index){sun.position.set(-28,65,28);sun.target.position.set(0,0,0);sun.shadow.camera.left=-46;sun.shadow.camera.right=46;sun.shadow.camera.top=39;sun.shadow.camera.bottom=-39;sun.shadow.camera.far=140;sun.shadow.camera.updateProjectionMatrix();selected=index;clearWorld();track=isCollection()?makeCarpetTrack(COURSES[index]):makeTrack(withBarriers(COURSES[index],selectedBarriers));race=createRace();tyreMarks=new TyreMarks(world,track);const theme=index%3,random=rng(713+index*201);scene.background=new THREE.Color(0x000000);scene.fog=new THREE.Fog(0x000000,115,210);
- if(isCollection()){carpetWorld=buildCarpetWorld({world,track,addCollider});grandScenery=carpetWorld.fader;}else{if(track.course.realWorld)panoramaWorld=(track.course.id==='homebush'?buildHomebushWorld:track.course.id==='hidden-valley'?buildHiddenValleyWorld:track.course.id==='adelaide'?buildAdelaideWorld:track.course.id==='sandown'?buildSandownWorld:track.course.id==='albert-park'?buildAlbertWorld:track.course.id==='oran-park'?buildOranWorld:buildPanoramaWorld)({world,track,addCollider});else if(track.course.grand)buildGrandWorld(random);else if(track.course.deco==='bath')buildBath(random);else if(track.course.deco==='garden')buildGarden(random);else if(track.course.deco==='beach')buildBeach(random);else buildTable(random);buildRoad();}race.obstacles=colliders;
+function setupCourse(index){sun.position.set(-28,65,28);sun.target.position.set(0,0,0);sun.shadow.camera.left=-46;sun.shadow.camera.right=46;sun.shadow.camera.top=39;sun.shadow.camera.bottom=-39;sun.shadow.camera.far=140;sun.shadow.camera.updateProjectionMatrix();selected=index;clearWorld();track=isCollection()?makeCarpetTrack(COURSES[index]):makeTrack(withBarriers(COURSES[index],selectedBarriers));race=createRace();tyreMarks=new TyreMarks(world,track);const theme=index%3,random=rng(713+index*201);const sky=track.course.type==='motorcycle'?0x91b8ca:0x000000;scene.background=new THREE.Color(sky);scene.fog=new THREE.Fog(sky,115,210);
+ if(isCollection()){carpetWorld=buildCarpetWorld({world,track,addCollider});grandScenery=carpetWorld.fader;}else{if(track.course.realWorld)panoramaWorld=(track.course.id==='phillip-island'?buildIslandWorld:track.course.id==='homebush'?buildHomebushWorld:track.course.id==='hidden-valley'?buildHiddenValleyWorld:track.course.id==='adelaide'?buildAdelaideWorld:track.course.id==='sandown'?buildSandownWorld:track.course.id==='albert-park'?buildAlbertWorld:track.course.id==='oran-park'?buildOranWorld:buildPanoramaWorld)({world,track,addCollider});else if(track.course.grand)buildGrandWorld(random);else if(track.course.deco==='bath')buildBath(random);else if(track.course.deco==='garden')buildGarden(random);else if(track.course.deco==='beach')buildBeach(random);else buildTable(random);buildRoad();}race.obstacles=colliders;
  for(const c of race.cars){const model=isCollection()&&!c.racer?makeTrafficVehicle(c.color):makeVehicle(c.color,COURSES[index].type);world.add(model);carModels.push(model);if(c.id===0||c.racer){const playerTag=new THREE.Sprite(new THREE.SpriteMaterial({map:textTexture(c.name,'#203129',c.id===0?'#dcff61':'#ffffff',128,64),depthTest:false,transparent:true}));playerTag.scale.set(1.8,.9,1);playerTag.position.y=3;model.add(playerTag);model.userData.playerTag=playerTag;}}
  for(let i=0;i<race.cars.length;i++){let model=carModels[i],c=race.cars[i];model.position.set(c.x,c.y,c.z);model.rotation.y=c.heading;}
  courseLights=new CourseLights(world,track,carModels,race.cars,colliders,addCollider);boostWorld=buildBoostWorld(world,race.boostPickups,race.boostPads);visualStyle.prepare(world,carModels);
@@ -394,7 +397,7 @@ function updateVisuals(dt,t){
  for(let i=0;i<race.cars.length;i++){let c=race.cars[i],g=carModels[i];let p=track.nodes[c.index];
   if(c.rail&&p.rail){const up=new THREE.Vector3(p.ux,p.uy,p.uz);g.position.set(c.x+up.x*.04,c.y+up.y*.04,c.z+up.z*.04);g.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(new THREE.Vector3(c.x,c.y,c.z),new THREE.Vector3(c.x-p.t3x,c.y-p.t3y,c.z-p.t3z),up));}
   else{g.position.set(c.x,c.y+.04,c.z);g.rotation.y=c.heading;let pitch=c.airborne?clamp(-c.vy*.035,-.3,.3):clamp(p.slope,-.45,.45);g.rotation.x=0;g.rotation.z=0;g.rotateX(-pitch);}if(COURSES[selected].type==='boat')g.position.y+=Math.sin(t*5+i)*.045;g.visible=c.flash<=0||Math.floor(t*12)%3!==0;if(g.userData.playerTag)g.userData.playerTag.visible=mode==='menu'||(!lowClutter&&cameraMode!=='chase');for(const wheel of g.userData.wheels)wheel.rotation.x+=c.speed*dt*2.7;
-  updateBrakeLights(g,c.braking&&mode!=='menu');visualStyle.animate(c,g,dt,t,mode==='race'&&!race.paused&&race.countdown<=0);c.hitboxScaleX=g.scale.x;c.hitboxScaleZ=g.scale.z;
+  updateBrakeLights(g,c.braking&&mode!=='menu');if(g.userData.motorcycle){g.userData.leanBody.rotation.z=-(c.lean||0);g.scale.setScalar(1);}else visualStyle.animate(c,g,dt,t,mode==='race'&&!race.paused&&race.countdown<=0);c.hitboxScaleX=g.scale.x;c.hitboxScaleZ=g.scale.z;
   if(mode==='race'&&!race.paused&&race.countdown<=0){if(c.boosting&&Math.random()<.7)spawnParticle(c,'boost');const surface=tyreSurface(track,c);if(surface?.soil&&Math.abs(c.speed)>2&&c.flash<1.6&&c.finish===null&&Math.random()<1-Math.exp(-Math.min(35,Math.abs(c.speed)*1.8)*dt))spawnParticle(c,'dirt',surface);else if(!c.airborne&&(c.drifting||COURSES[selected].type==='boat')&&Math.abs(c.speed)>4&&Math.random()<.25)spawnParticle(c,'dust');}
  }
  for(let a of animated){if(a.type==='fan'){a.g.rotation.z+=dt*14;}else if(a.type==='current'){a.g.position.x=((t*a.speed+a.phase*a.width)%a.width)-a.width/2;}else if(a.type==='water'){if(a.mat.userData.waterShader)a.mat.userData.waterShader.uniforms.waterTime.value=t;}else if(a.type==='foam'){a.g.position.y=Math.sin(t*1.4)*.025;}else if(a.type==='float'){a.g.position.y=a.y+Math.sin(t*1.4+a.phase)*.12;a.g.rotation.z=Math.sin(t+a.phase)*.028;}else if(a.type==='bug'){a.g.position.x=a.x+Math.sin(t*.3+a.phase)*.25;a.g.rotation.y+=dt*.06;}else if(a.type==='ripple'){let s=1+(t*.3+a.phase)%1;a.g.scale.set(s,s,s);}}
@@ -408,12 +411,13 @@ function selectCamera(value){cameraMode=CAMERA_MODES.includes(value)?value:'clos
 function updateChaseCamera(){
  const car=race.cars[0],forwardX=Math.sin(car.heading),forwardZ=Math.cos(car.heading);
  if(cameraMode!=='chase'){
-  const model=carModels[0],height=cameraMode==='nose'?.5:cameraMode==='roof'?1.65:1.12,front=cameraMode==='nose'?1.8:cameraMode==='roof'?0:.12;
+  const model=carModels[0],bike=model.userData.motorcycle,height=cameraMode==='nose'?.5:cameraMode==='roof'?(bike?1.95:1.65):(bike?1.45:1.12),front=cameraMode==='nose'?(bike?1.35:1.8):cameraMode==='roof'?0:.12;
+  // Onboard views ride the vehicle's own frame (so they roll through loops); a bike's cockpit view also leans with it.
+  const pose=model.quaternion.clone();if(bike&&cameraMode==='cockpit')pose.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),-(car.lean||0)));
   chaseCamera.near=.04;
-  chaseCamera.position.copy(new THREE.Vector3(0,height,front).applyQuaternion(model.quaternion)).add(model.position);
-  chaseTarget.copy(new THREE.Vector3(0,height,front+20).applyQuaternion(model.quaternion)).add(model.position);
-  // Onboard views are bolted to the car, so they roll with it through loops.
-  chaseCamera.up.copy(new THREE.Vector3(0,1,0).applyQuaternion(model.quaternion));chaseCamera.lookAt(chaseTarget);chaseCamera.updateProjectionMatrix();return;
+  chaseCamera.position.copy(new THREE.Vector3(0,height,front).applyQuaternion(pose)).add(model.position);
+  chaseTarget.copy(new THREE.Vector3(0,height,front+20).applyQuaternion(pose)).add(model.position);
+  chaseCamera.up.copy(new THREE.Vector3(0,1,0).applyQuaternion(pose));chaseCamera.lookAt(chaseTarget);chaseCamera.updateProjectionMatrix();return;
  }
  chaseCamera.near=.15;chaseCamera.up.set(0,1,0);chaseCamera.updateProjectionMatrix();
  // A fixed offset in the vehicle's heading keeps the view behind the car, including drifts and jumps.
@@ -465,9 +469,9 @@ function frame(ms){requestAnimationFrame(frame);let t=ms/1000,dt=Math.min(.05,la
  if(interior)player.visible=false;
  if(mode!=='menu'&&perspectiveView()&&player.userData.playerTag)player.userData.playerTag.visible=false;
  renderer.render(scene,activeCamera);
- if(interior)cockpit.updateMirrors(renderer,scene,player,t,world);
+ if(interior&&track.course.type!=='motorcycle')cockpit.updateMirrors(renderer,scene,player,t,world);
  player.visible=visible;
- if(interior){const steer=Math.max(Number(!!(keys.KeyA||keys.ArrowLeft||touchControls.keys.KeyA)),pad.left||0)-Math.max(Number(!!(keys.KeyD||keys.ArrowRight||touchControls.keys.KeyD)),pad.right||0);cockpit.update(race.cars[0].speed,steer,race.paused?0:dt,innerWidth/innerHeight);cockpit.render(renderer);}
+ if(interior){const steer=Math.max(Number(!!(keys.KeyA||keys.ArrowLeft||touchControls.keys.KeyA)),pad.left||0)-Math.max(Number(!!(keys.KeyD||keys.ArrowRight||touchControls.keys.KeyD)),pad.right||0);if(track.course.type==='motorcycle'){bikeCockpit.update(race.cars[0].speed,race.cars[0].lean||0,steer,race.paused?0:dt,innerWidth/innerHeight);bikeCockpit.render(renderer);}else{cockpit.update(race.cars[0].speed,steer,race.paused?0:dt,innerWidth/innerHeight);cockpit.render(renderer);}}
 }
 function configureRaceUI(){
  document.body.classList.toggle('sandown-mode',track.course.id==='sandown');
@@ -497,7 +501,7 @@ function updateCollectionHUD(){
 }
 function updateBoostHUD(me){
  $('boost-fill').style.width=me.boost*100+'%';$('boost-label').textContent=me.boostLocked?'REFILL NEEDED':'BOOST';$('boost-fill').parentElement.classList.toggle('locked',!!me.boostLocked);
- if((me.boostRefills||0)>lastBoostRefills){lastBoostRefills=me.boostRefills;notify(me.lastBoostSource==='lap'?'LAP COMPLETE · BOOST FULL':'BOOST REFILLED',1.4);beep(1050,.13)}
+ if((me.boostRefills||0)>lastBoostRefills){lastBoostRefills=me.boostRefills;if(me.lastBoostSource==='lap'&&!boostOptions.manual)return;notify(me.lastBoostSource==='lap'?'LAP COMPLETE · BOOST FULL':'BOOST REFILLED',1.4);beep(1050,.13)}
 }
 function finishCollection(me,best){
  const winner=race.racers.find(c=>c.id===race.winner),won=winner.id===0;

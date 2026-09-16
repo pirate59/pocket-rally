@@ -64,7 +64,8 @@ export class TyreMarks{
  dispose(){this.mesh.removeFromParent();this.mesh.geometry.dispose();this.mesh.material.dispose();this.previous.clear();}
  wheel(c,side){
   const sx=c.hitboxScaleX||1,sz=c.hitboxScaleZ||1,s=Math.sin(c.heading),t=Math.cos(c.heading);
-  const x=c.x+t*side*.84*sx-s*.94*sz,z=c.z-s*side*.84*sx-t*.94*sz,surface=tyreSurface(this.track,c,x,z);
+  const bike=c.vehicleType==='motorcycle',lateral=bike?0:side*.84*sx,longitudinal=bike?side*.92:-.94*sz;
+  const x=c.x+t*lateral+s*longitudinal,z=c.z-s*lateral+t*longitudinal,surface=tyreSurface(this.track,c,x,z);
   return !surface?null:{x,y:surface.y,soil:surface.soil,z,dx:t*.125*sx,dz:-s*.125*sx};
  }
  segment(a,b,strength,time){

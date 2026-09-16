@@ -43,7 +43,7 @@ if(highDetail>0.5){
    let detail=rounded.get(g);if(!detail){detail=new THREE.SphereGeometry(p.radius,32,20,p.phiStart,p.phiLength,p.thetaStart,p.thetaLength);rounded.set(g,detail)}
    this.geometry.push({mesh:o,original:g,detail});
   });
-  for(const car of cars){
+  for(const car of cars){if(car.userData.motorcycle)continue;
    const g=new THREE.Group();g.name='High detail vehicle trim';car.add(g);this.groups.push(g);
    const metal=new THREE.MeshStandardMaterial({color:0xaab7bf,metalness:.8,roughness:.26}),rubber=new THREE.MeshStandardMaterial({color:0x18201e,roughness:.92});
    const part=(geo,mat,x,y,z,parent=g)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m};

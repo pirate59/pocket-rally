@@ -12,7 +12,7 @@ export class CourseLights{
   if(track.course.mode==='collect')for(const [a,b]of track.edges){const p=track.nodes[a],q=track.nodes[b],dx=q.x-p.x,dz=q.z-p.z,len=Math.hypot(dx,dz);if(len<22)continue;for(let d=14;d<len-5;d+=36)candidates.push({x:p.x+dx*d/len-dz/len*(track.course.width/2+1.7),z:p.z+dz*d/len+dx/len*(track.course.width/2+1.7),y:0})}
   else{let spacing=0;for(let i=0;i<track.n;i++){const p=track.nodes[i],prev=track.nodes[(i+track.n-1)%track.n];spacing+=Math.hypot(p.x-prev.x,p.z-prev.z);if(spacing<(track.course.mapScale?29:17)||p.gap||p.ramp)continue;spacing=0;candidates.push({x:p.x+p.tz*(track.course.width/2+1.8),z:p.z-p.tx*(track.course.width/2+1.8),y:p.y})}}
   const boat=track.course.type==='boat',garden=track.course.type==='buggy';
-  for(const p of candidates){if(obstacles.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<o.r+1.2)||this.fixtures.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<10))continue;
+  for(const p of (track.course.type==='motorcycle'?[]:candidates)){if(obstacles.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<o.r+1.2)||this.fixtures.some(o=>Math.hypot(o.x-p.x,o.z-p.z)<10))continue;
    const height=boat?2.4:garden?5:7,base=p.y+.1;
    part(new THREE.CylinderGeometry(.16,.24,height,8),pole,p.x,base+height/2,p.z);
    part(new THREE.CylinderGeometry(boat?.7:.95,.65,.24,10),shade,p.x,base+height,p.z);
@@ -20,11 +20,11 @@ export class CourseLights{
    part(new THREE.CylinderGeometry(.55,.72,.24,10),pole,p.x,base,p.z);
    this.fixtures.push({x:p.x,y:base+height-.4,z:p.z,color:boat?0x83dfff:garden?0xffc779:0xffdfab,height});addCollider(p.x,p.z,.28,base);
   }
-  for(const model of models){for(const x of[-.51,.51])part(new THREE.SphereGeometry(.105,8,6),glow,x,.76,track.course.type==='boat'?1.35:1.48,model);part(new THREE.BoxGeometry(.8,.09,.025),red,0,.65,-1.49,model)}
+  for(const model of models){if(model.userData.motorcycle)continue;for(const x of[-.51,.51])part(new THREE.SphereGeometry(.105,8,6),glow,x,.76,track.course.type==='boat'?1.35:1.48,model);part(new THREE.BoxGeometry(.8,.09,.025),red,0,.65,-1.49,model)}
   this.points=Array.from({length:4},()=>{const l=new THREE.PointLight(0xffdfab,0,25,1.4);world.add(l);return l});
   this.headlights=Array.from({length:3},()=>{const l=new THREE.SpotLight(0xffe7b2,0,33,Math.PI/6,.5,1.1);world.add(l,l.target);return l});this.lastSelection=-Infinity;this.selected=[];
  }
- update(cars,camera,time){
+ update(cars,camera,time){if(this.track.course.type==='motorcycle')return;
   // Reassign lamps a few times per second, keeping light counts constant so
   // driving between districts does not trigger shader recompilation.
   if(time-this.lastSelection>.25||time<this.lastSelection){this.lastSelection=time;const p=cars[0];this.selected=[...this.fixtures].sort((a,b)=>(a.x-p.x)**2+(a.z-p.z)**2-((b.x-p.x)**2+(b.z-p.z)**2)).slice(0,4)}
