@@ -4,6 +4,7 @@ import {ALBERT_PARK,makeAlbertTerrain} from './albert-park.mjs';
 import {SANDOWN,makeSandownTerrain} from './sandown.mjs';
 import {ADELAIDE,makeAdelaideTerrain} from './adelaide.mjs';
 import {HIDDEN_VALLEY,makeHiddenValleyTerrain} from './hidden-valley.mjs';
+import {HOMEBUSH,makeHomebushTerrain} from './homebush.mjs';
 import {makeBarriers,makeIslandWalls} from './track-boundaries.mjs';
 import {driveRealCar,REAL_GRIP} from './real-driving.mjs';
 import {PANORAMA,makePanoramaTerrain} from './real-courses.mjs';
@@ -29,7 +30,7 @@ export const COURSES = [
  {name:'Backyard Wilds',revision:2,tag:'THE WILD GARDEN RALLY',desc:'Carve through the roots and toys.<br>Two dirt jumps. One timber skybridge.',tags:['ROOT CHICANES','TWIN DIRT JUMPS','TIMBER SKYBRIDGE'],type:'buggy',color:0x688849,road:0x755333,width:6.1,bounds:[44,31],walls:true,gap:[.335,.351],rampStart:.313,extraJumps:[{rampStart:.782,gap:[.804,.820]}],deco:'garden',points:[[-35,0,-18],[-21,0,-25],[-8,0,-24],[-2,1,-14],[6,0,-7],[19,0,-18],[32,0,-24],[39,0,-13],[29,0,-5],[25,0,5],[37,0,11],[34,0,24],[21,0,25],[11,2,14],[0,6,0],[-11,2,-5],[-23,0,2],[-17,0,14],[-24,0,25],[-38,0,23],[-40,0,10],[-33,0,3],[-39,0,-6]]},
  {name:'Sandy Shores',revision:1,tag:'THE COASTAL SPRINT CIRCUIT',desc:'Race the dune bowl, well back from the water.<br>Launch off two sand jumps on the long straights.',tags:['DUNE JUMPS','SWEEPING BENDS','CLEAR SIGHTLINES'],type:'buggy',color:0xe0793f,road:0xdac697,width:6.6,bounds:[44,31],walls:true,barrierOffset:.34,jumpAnchors:[[-8,-18],[8,18]],sampledPath:true,deco:'beach',points:beachLoop()}
 ];
-COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA,ORAN_PARK,ALBERT_PARK,SANDOWN,ADELAIDE,HIDDEN_VALLEY);
+COURSES.push(...grandCourses(COURSES),CARPET_COURSE,PANORAMA,ORAN_PARK,ALBERT_PARK,SANDOWN,ADELAIDE,HIDDEN_VALLEY,HOMEBUSH);
 // Piece-built example courses from the imagined-course building blocks.
 COURSES.push(...Object.values(EXAMPLES).map(example=>makeCourse(example.spec,example)));
 // Boost pickups replace regenerating boost; keep earlier time records separate.
@@ -53,7 +54,7 @@ export function makeTrack(course){
  // Rail nodes keep the heading of the road they were entered from, so the
  // plan-view checks, minimap and chase camera treat a loop as a straight.
  for(let i=0;i<n;i++){const q=nodes[i];if(!q.rail)continue;let k=i;while(nodes[wrap(k,n)].rail)k--;const entry=nodes[wrap(k,n)];q.tx=entry.tx;q.tz=entry.tz;q.heading=entry.heading;q.railStart=!nodes[wrap(i-1,n)].rail;q.railEnd=!nodes[(i+1)%n].rail;}
- const track={nodes,n,length:total,spacing:total/n,course,jumps};if(course.id==='hidden-valley')makeHiddenValleyTerrain(track);else if(course.id==='adelaide')makeAdelaideTerrain(track);else if(course.id==='sandown')makeSandownTerrain(track);else if(course.id==='albert-park')makeAlbertTerrain(track);else if(course.id==='oran-park')makeOranTerrain(track);else if(course.realWorld)makePanoramaTerrain(track);
+ const track={nodes,n,length:total,spacing:total/n,course,jumps};if(course.id==='homebush')makeHomebushTerrain(track);else if(course.id==='hidden-valley')makeHiddenValleyTerrain(track);else if(course.id==='adelaide')makeAdelaideTerrain(track);else if(course.id==='sandown')makeSandownTerrain(track);else if(course.id==='albert-park')makeAlbertTerrain(track);else if(course.id==='oran-park')makeOranTerrain(track);else if(course.realWorld)makePanoramaTerrain(track);
  const barriers=makeBarriers(nodes,course,track);
  barriers.push(...makeIslandWalls(nodes,course));
  // Seat moved walls on the surrounding terrain while preserving bridge decks.

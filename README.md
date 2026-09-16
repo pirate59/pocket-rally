@@ -89,6 +89,10 @@ The whole board undulates. Relief carries the climb through the esses, the drop 
 
 The geometry is authored for this game from published circuit facts and lap guides; no map artwork is traced or bundled. Sources are listed in [docs/hidden-valley-sources.md](docs/hidden-valley-sources.md).
 
+### Sydney 500 · Homebush
+
+Real World includes the historic 2009–2016 Homebush course, with 13 anti-clockwise turns, named sections, approximate Dawn Fraser Avenue undulations and Olympic Park scenery. See [research and modelling limits](docs/homebush-sources.md). Validate with `node scripts/test-homebush.mjs` and `node scripts/test-real-driving.mjs --races --homebush-only`.
+
 ## Game modes and controls
 
 - **Circuits:** three laps against three CPU racers; the player starts fourth.
