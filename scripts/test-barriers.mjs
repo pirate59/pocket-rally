@@ -6,6 +6,8 @@ for(const mode of ['bumper','race'])for(const original of COURSES.filter(c=>c.wa
  const course=withBarriers(original,mode);
  const tr=makeTrack(course);
  for(const w of tr.barriers){
+  if(w.island)continue; // Split-road islands sit on the road by design.
+  const half=Math.min(tr.nodes[w.index].width,tr.nodes[(w.index+1)%tr.n].width)/2;
   // Check the visible cap, not just the wall centre, against the driveable road.
   for(const t of[0,.5,1]){
    const x=w.ax+(w.bx-w.ax)*t,z=w.az+(w.bz-w.az)*t,y=w.ay+(w.by-w.ay)*t;let distance=Infinity;
@@ -14,7 +16,7 @@ for(const mode of ['bumper','race'])for(const original of COURSES.filter(c=>c.wa
     if(Math.abs(y-a.y-(b.y-a.y)*u)>1.2)continue;
     distance=Math.min(distance,Math.hypot(x-a.x-dx*u,z-a.z-dz*u));
    }
-   assert(distance-(w.width+.08)/2>course.width/2-.025,`${course.name}: wall intrudes on road at ${w.index}`);
+   assert(distance-(w.width+.08)/2>half-.025,`${course.name}: wall intrudes on road at ${w.index}`);
   }
   assert(!tr.nodes[w.index].gap&&!tr.nodes[(w.index+1)%tr.n].gap,'Keep jump openings clear');
  }

@@ -25,7 +25,7 @@ export function makeBoostPickups(track){
   for(const [x,z]of [[-65,-90],[65,5],[-30,110]]){const p=candidates.filter(p=>result.every(o=>Math.hypot(p.x-o.x,p.z-o.z)>55)).sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0];result.push({...p})}
  }else{
   for(let k=0;k<count;k++){const fraction=count===1?.56:.18+k*.32,preferred=Math.floor(track.n*fraction);let best=null,score=Infinity;
-   track.nodes.forEach((p,index)=>{if(p.gap||p.ramp||Math.abs(p.slope)>.08||track.hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<16)||track.debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<7))return;const behind=track.nodes[(index-8+track.n)%track.n],ahead=track.nodes[(index+8)%track.n];if(behind.gap||ahead.gap||Math.abs(Math.atan2(Math.sin(ahead.heading-behind.heading),Math.cos(ahead.heading-behind.heading)))>.22)return;const d=Math.abs(index-preferred);if(d<score){best={x:p.x,y:p.y,z:p.z,index};score=d}});
+   track.nodes.forEach((p,index)=>{if(p.gap||p.ramp||p.rail||Math.abs(p.slope)>.08||track.hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<16)||track.debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<7))return;const behind=track.nodes[(index-8+track.n)%track.n],ahead=track.nodes[(index+8)%track.n];if(behind.gap||ahead.gap||Math.abs(Math.atan2(Math.sin(ahead.heading-behind.heading),Math.cos(ahead.heading-behind.heading)))>.22)return;const d=Math.abs(index-preferred);if(d<score){best={x:p.x,y:p.y,z:p.z,index};score=d}});
    if(!best)throw new Error('No safe boost pickup position for '+track.course.name);result.push(best);
   }
  }
@@ -34,7 +34,7 @@ export function makeBoostPickups(track){
 export function makeBoostPads(track){
  const count=track.course.mapScale?6:2,result=[];
  for(let k=0;k<count;k++){const preferred=Math.floor(track.n*(.12+k/count*.76));let best=null,score=Infinity;
-  track.nodes.forEach((p,index)=>{if(p.gap||p.ramp||Math.abs(p.slope)>.08||track.hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<14)||track.debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<6))return;const d=Math.abs(index-preferred),spacing=result.every(o=>Math.hypot(p.x-o.x,p.z-o.z)>18);if(spacing&&d<score){best={x:p.x,y:p.y,z:p.z,index,heading:p.heading};score=d}});
+  track.nodes.forEach((p,index)=>{if(p.gap||p.ramp||p.rail||Math.abs(p.slope)>.08||track.hazards.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<14)||track.debris.some(o=>Math.hypot(p.x-o.x,p.z-o.z)<6))return;const d=Math.abs(index-preferred),spacing=result.every(o=>Math.hypot(p.x-o.x,p.z-o.z)>18);if(spacing&&d<score){best={x:p.x,y:p.y,z:p.z,index,heading:p.heading};score=d}});
   if(!best)throw new Error('No safe boost pad position for '+track.course.name);if(track.course.mode==='collect'){const node=track.nodes[best.index],next=track.nodes[node.neighbors[0]];best.heading=Math.atan2(next.x-node.x,next.z-node.z)}result.push({...best,id:k,cooldowns:new Map()});
  }
  return result;

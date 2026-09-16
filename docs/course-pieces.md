@@ -45,6 +45,11 @@ Text form (one string per piece) or object form via `PIECES`.
 | 135° turn | `L135 sharp` / `R135 sweeper` | `PIECES.turn(135,'L','sweeper')` | sharp 7 · sweeper 14 | |
 | 180° hairpin, round | `hairpin L round` | `PIECES.hairpin('L','round')` | 6 | One semicircle; exits 2R beside the entry |
 | 180° hairpin, square | `hairpin R square gap=6` | `PIECES.hairpin('R','square',{gap:6})` | 6 | Two 90° corners with a short straight at the tip; exits 2R + gap beside the entry |
+| Corkscrew up | `corkscrew L radius=12 rise=6 turns=1` | `PIECES.corkscrew('L',{radius:12,rise:6})` | 12 | A climbing helix: `turns` full circles rising `rise` in total (default 6 per turn), exiting over its own entry at the same heading one deck up. Needs a level straight ≥ radius after it. Left or right. |
+| Corkscrew down | `corkscrew R down` | `PIECES.corkscrew('R',{down:true})` | 12 | The same helix descending (or `rise=-6`). Needs a level straight ≥ radius before it, and enough height to descend from. Left or right. |
+| Loop-de-loop | `loop L radius=8` | `PIECES.loop('L',{radius:8})` | 8 | A vertical loop on a sticky rail. Exits beside its entry (drifts one road width + 1 to `side`) at the same heading. Needs a level plain straight ≥ 20 before and ≥ 12 after. |
+| Choke point | `straight 30 choke=3.6` | `PIECES.straight(30,{choke:3.6})` | — | The road funnels from full width down to `choke` through the middle of the straight and back out (30 % taper each end). Straight ≥ 16; choke ≥ 2.6. |
+| Split road | `straight 40 split=1.2 lane=4.4` | `PIECES.straight(40,{split:1.2})` | — | The road widens into two lanes of `lane` (default 0.65 × width) around a centre island `split` wide, with a barrier and kerbs down the island. Straight ≥ 24; lane ≥ 3. |
 
 Modifiers (append to any piece as `key=value`):
 
@@ -55,6 +60,40 @@ Modifiers (append to any piece as `key=value`):
 | `gap=N` | square hairpin | Straight length at the tip (default 4) |
 | `runoff=N` | turns, hairpins | Extra barrier clearance on the outside of that bend |
 | `jump` or `jump=N` | straights | Places a jump crest `N` units into the straight (default 14). `makeTrack` builds the ramp over the 12 units before the crest and a 3.4-unit gap. The landing rules below decide how much straight must follow. |
+
+## Adventurous pieces
+
+- **Loop-de-loop** — a rail section. The circle sits in the heading plane
+  centred `radius` above the entry, so its back half overhangs the approach
+  road (that is why the approach must be ≥ 20 units of plain road). The ribbon
+  drifts sideways by `width + 1` over the turn so the exit runs beside the
+  entry. Cars are *carried*: on entry `race.mjs` switches the car to rail
+  mode — position and orientation come from the node's 3D tangent and up
+  vectors, speed bleeds on the climb and returns on the drop but never falls
+  below `RAIL_FLOOR` (8), so a slow entry means a slow loop, never a fall.
+  Steering is ignored on the rail; throttle adds a little. No walls, pickups,
+  pads or debris are placed on rail nodes and cars on the rail don't collide.
+  Left and right variants only differ in which side the exit lands. No
+  supports are drawn under the loop.
+- **Corkscrew** — a spiral ramp, up or down, left or right. The helix climbs `rise` over `turns` full
+  circles and comes out directly above where it went in, so the exit deck
+  passes over the start of the helix: follow it with a level straight of at
+  least `radius` units, then descend (`straight 16 rise=-5.5`). Each turn must
+  climb ≥ 5 units; the radius must be ≥ width/2 + 2.5. Treated as a harsh
+  turn for jump landings. Rendered on stilts like any deck.
+- **Choke** — the barriers and road funnel in together. CPU rivals read the
+  narrower width and pull their line to the centre; the player just has to
+  be tidy. Minimum 2.6 (a car is ~1.6 wide). Don't put one within 20 units
+  of the start line or in a jump's landing runway.
+- **Split** — a centre island with a two-sided barrier and kerbs. Rivals
+  commit to a lane about 32 units out and slow down if they are not across
+  in time; `recover` places a car in a lane rather than on the island. The
+  island nose is a head-on wall, so give it a straight run-up: not within 20
+  units of the start line, not in a jump landing, and ideally not straight
+  out of a hairpin (warning).
+
+Not available (engine limits, see the end): barrel-roll corkscrew, banked
+bends.
 
 ## Elevation, bridges and jumps
 
@@ -109,6 +148,13 @@ the crest.
 | No crest within the first 20 units of the lap | problem | Cars would leave the grid straight into the ramp |
 | The last 10 units of the lap should be flat straight | warning | That is where the grid sits |
 | Opposite-direction harsh turns with no straight between | warning | Snap chicane; add a short straight or use sweepers |
+| A choke or split beginning within 20 units of the start line | problem | The grid launches straight into it |
+| A choke or split inside a jump's 30-unit landing | problem | Landing into a funnel or an island nose |
+| A corkscrew not followed by a level straight ≥ its radius | problem | The exit deck runs over the start of the helix |
+| A corkscrew down not preceded by a level straight ≥ its radius | problem | The entry deck runs over the end of the helix |
+| A loop without a level plain straight ≥ 20 before and ≥ 12 after | problem | The loop overhangs its approach by `radius`; cars need to settle on exit |
+| Loop radius < 6 | problem | The top must clear cars at the bottom |
+| A choke or split straight out of a harsh turn | warning | Cars are still gathering their line |
 
 A quick way to satisfy the start rules: put the start/finish partway along a
 long straight by splitting it, e.g. `… , 'hairpin R round', 'straight 10'` at the
@@ -153,7 +199,8 @@ in 90–180 s needs **1800–3600 units** of road. At that scale use larger radi
 (`radius=30`–`45` sweepers, `radius=12`–`18` hairpins) — the 7/14 defaults are
 tuned for the 6.8-wide arcade road.
 
-`EXAMPLES.sands` (Shifting Sands Grand Tour, 2173 units ≈ 105 s CPU lap) is
+`EXAMPLES.adventure` (Adventure Park) puts a split, a choke and a corkscrew on
+one table. `EXAMPLES.sands` (Shifting Sands Grand Tour, 2173 units ≈ 105 s CPU lap) is
 the worked example: a Bay Straight jump, a coastal sweeper climbing onto a pier
 over the water, a reef chicane, a hairpin-and-diagonal reef section, and a
 comb of dune switchbacks joined by hairpins.
@@ -187,8 +234,29 @@ hairpin L round radius=8  straight 13 rise=-4.5  (descend)
 The jump crest is 14 units into the 44-unit straight, leaving exactly 30 units
 of landing before the 135° sharp corner.
 
+## Rail sections (how loops work in the engine)
+
+Layout points carry nine elements: `[x, y, z, width, island, rail, ux, uy, uz]`.
+For a rail point `rail = 1` and `(ux, uy, uz)` is the car's up vector (towards
+the loop centre). `makeTrack` measures rail spans in 3D, marks nodes
+`rail: true` with a 3D tangent `t3x/t3y/t3z`, and gives them the plan-view
+heading of the road they were entered from so the minimap, chase camera and
+AI curvature preview treat a loop as a straight. `game.mjs` skips rail nodes
+in the flat road and builds them as a floating double-sided deck with no
+supports (`buildRailRibbon`) — it is a toy world; rail cars are oriented by
+quaternion from the frame. The chase camera stays level and follows the car's
+plan heading, rising and falling with it — and each loop is registered with
+the scenery fader, so whenever the deck comes between the camera and the car
+it turns translucent (as buildings do in the classic view) and the driver
+stays in sight. The nose, roof and cockpit views are bolted to the car and
+roll with it, so the world turns over around you. This is the groundwork for fully 3D courses: any piece that
+emits rail points with frames rides the same path.
+
 ## Not yet available
 
-Loops, banked bends, crossovers at grade, chicane and S-bend compound pieces,
-and larger boards. Add new kinds in `primitives()` and list them here so every
-generator sees the same catalogue.
+**Barrel-roll corkscrew** (a helix around the forward axis) — the rail mode
+above supports it in principle; it needs a piece that emits the frames and a
+decision about lateral drift. **Banked bends** need the flat road to accept a
+roll angle. Also not yet: at-grade crossovers, chicane/S-bend compound pieces.
+Add new kinds in `primitives()` and list them here so every generator sees
+the same catalogue.
