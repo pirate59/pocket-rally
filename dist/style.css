@@ -93,6 +93,7 @@ body[data-visual-style="cartoon"] .menu,body[data-visual-style="cartoon"] .cours
 @media(max-width:700px) and (min-height:600px){body.real-world-mode .menu{left:20px;right:20px;top:auto;bottom:80px;width:auto;max-height:48dvh}body.real-world-mode .menu h1{font-size:34px;margin:0 0 12px}body.real-world-mode .menu .intro,body.real-world-mode .menu>.eyebrow{display:none}body.real-world-mode .course{padding:11px 13px}body.real-world-mode .course-info{display:none}}
 
 .oran-park-mode .minimap{width:150px;height:133px}@media(max-width:540px){.oran-park-mode .minimap{width:105px;height:93px}}
+.hidden-valley-mode .minimap{width:188px;height:114px}@media(max-width:540px){.hidden-valley-mode .minimap{width:130px;height:79px}}
 .albert-park-mode .minimap{width:150px;height:170px}@media(max-width:540px){.albert-park-mode .minimap{width:105px;height:119px}}
 
 /* Optional quiet racing view. Driving targets retain their full touch area. */
@@ -119,4 +120,5 @@ body.low-clutter.racing .race-message{font-size:64px}body.low-clutter.racing .ra
 .controller-guide{margin-top:20px;padding-top:14px;border-top:1px solid #c6cdc2}.controller-guide h3{font-size:15px;margin:0 0 8px}#options-dialog .controller-guide p{font-size:12px;line-height:1.7;margin:8px 0}.controller-guide #controller-status{font-weight:700}.controller-active #touch,.controller-active .touch-help{display:none!important}button:focus-visible{outline:3px solid #729331;outline-offset:3px}
 .controller-active button:focus,.controller-active select:focus,.controller-active input:focus{outline:3px solid #729331;outline-offset:3px}
 .sandown-mode .minimap{width:170px;height:107px}@media(max-width:540px){.sandown-mode .minimap{width:115px;height:73px}}
+.adelaide-mode .minimap{width:150px;height:173px}@media(max-width:540px){.adelaide-mode .minimap{width:100px;height:115px}}
 .manual-boost-off .boost,.manual-boost-off [data-key="ShiftLeft"],.manual-boost-off .controls>span:nth-child(4){display:none!important}
