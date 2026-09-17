@@ -308,5 +308,23 @@ export const EXAMPLES={
    'straight 96 rise=6', 'R90 sweeper radius=12', 'straight 8', 'L90 sweeper radius=12', 'straight 96 rise=-6',
    'hairpin R round radius=11', 'straight 24', 'straight 44 split=1.6', 'straight 106',
    'hairpin L round radius=11', 'straight 174', 'hairpin R round radius=11', 'straight 216 jump=124',
-   'R90 sweeper radius=20', 'straight 46', 'R90 sweeper radius=16', 'straight 16']}
+   'R90 sweeper radius=20', 'straight 46', 'R90 sweeper radius=16', 'straight 16']},
+ // A short grand tour on the 285 x 207 garden board: 1310 units, so a CPU lap
+ // runs about 61 s rather than the usual 90+. Every adventurous piece gets a
+ // turn. The creek crosses the south straight, which runs into the vertical
+ // loop; the road comes back 10 units over (the loop's drift) and doubles back
+ // through the big hairpin; the helix then climbs 6 units in one circle, passing
+ // over its own entry, and the deck it leaves on flies over the start straight
+ // at the origin — where the grand board draws its four crossing posts — before
+ // the descending sweeper drops it back to the garden and a dirt jump down the
+ // north straight. `centre` holds the layout where it was drawn, so the flyover
+ // keeps the origin; the turns sum to −360°, which is what a lap that crosses
+ // itself twice (the helix over its entry, the deck over the straight) needs.
+ hose:{name:'Coiled Hose Grand Tour',tag:'THE GARDEN STUNT GRAND TOUR',desc:'Splash the creek, then hang upside down through the coiled hose.<br>Spiral up the helix and fly the trellis deck over the main straight.',tags:['HOSE LOOP','HELIX CLIMB','TRELLIS FLYOVER'],theme:'garden',grand:true,start:{x:0,z:0,y:0,heading:Math.PI/2},centre:{x:2.5,z:-.5},
+  hazard:'stream',hazardLabel:'RUNNING CREEK · SIDE CURRENT',hazardAnchor:[60,-85],
+  spec:['straight 179', 'L90 sweeper radius=30', 'straight 30', 'L90 sweeper radius=25',
+   'straight 90', 'loop L radius=9', 'straight 90', 'hairpin L round radius=14',
+   'straight 40', 'corkscrew R radius=14 rise=6', 'straight 28', 'R90 sweeper radius=12',
+   'straight 55', 'L90 sweeper radius=20 rise=-6', 'straight 80', 'hairpin R round radius=22',
+   'straight 200 jump=120', 'R90 sweeper radius=20', 'straight 44', 'R90 sweeper radius=20', 'straight 16']}
 };

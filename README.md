@@ -1,6 +1,6 @@
 # Pocket Rally
 
-A browser-based miniature racer with twenty-three circuits — original playgrounds, grand tours, eight real-world tracks and piece-built generated courses — plus a free-route Carpet City collection race. Includes keyboard and mobile touch controls, three CPU rivals, polished and cel-shaded graphics, dynamic lighting, and shared boost refills.
+A browser-based miniature racer with twenty-four circuits — original playgrounds, grand tours, eight real-world tracks and piece-built generated courses — plus a free-route Carpet City collection race. Includes keyboard and mobile touch controls, three CPU rivals, polished and cel-shaded graphics, dynamic lighting, and shared boost refills.
 
 [Play the Sites version](https://pocket-rally.baaraamyou.chatgpt.site)
 

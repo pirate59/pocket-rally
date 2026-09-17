@@ -77,7 +77,9 @@ assert(problemsOf(['straight 40 jump','straight 20 jump','L90 sweeper','L90 swee
 assert(problemsOf(['L90 sweeper','straight 40','L90 sweeper','L90 sweeper','straight 40','L90 sweeper']).some(t=>t.includes('start on a straight')),'lap must start on a straight');
 assert(warningsOf(['straight 40','L90 sweeper','L90 sweeper','straight 40','L90 sweeper','L90 sweeper']).some(t=>t.includes('grid sits')),'grid on a bend is a warning');
 assert(warningsOf(['straight 40','R90 sharp','L90 sharp','straight 40','hairpin R round','straight 40','hairpin L round','straight 40','hairpin L round','straight 4']).some(t=>t.includes('opposite harsh turns')),'snap chicane is a warning');
-for(const [key,example] of Object.entries(EXAMPLES)){const v=validateLayout(layoutCourse(example.spec));assert(v.ok&&v.warnings.length===0,key+' must be problem- and warning-free: '+[...v.problems,...v.warnings].join('; '));}
+for(const [key,example] of Object.entries(EXAMPLES)){const width=example.width??(example.grand?9:6.8);
+ const v=validateLayout(layoutCourse(example.spec,{width}),{width});
+ assert(v.ok&&v.warnings.length===0,key+' must be problem- and warning-free: '+[...v.problems,...v.warnings].join('; '));}
 console.log('PASS: jump landing, slope, spacing, start-line and chicane rules');
 // Stages must run in order.
 const raw={layout:layoutCourse(oval),width:6.8};
@@ -108,7 +110,11 @@ for(const [key,example] of Object.entries(EXAMPLES)){
  const race=new Race(track);race.countdown=0;race.cars[0].finish=0;let loops=0,top=0;
  for(let i=0;i<900*90&&!race.cars.slice(1).every(c=>c.finish!==null);i++){race.step(1/90);for(const c of race.cars.slice(1)){if(c.rail&&!c.wasRail)loops++;c.wasRail=c.rail;if(c.rail)top=Math.max(top,c.y);}}
  if(example.spec.some(t=>t.startsWith('loop'))){const count=example.spec.filter(t=>t.startsWith('loop')).length;assert.equal(loops,count*3*3,key+': every rival rides every loop on every lap');assert(top>15,key+': cars reach the top of the loop');}
- if(course.grand)for(const c of race.cars.slice(1))assert(c.finish/3>=90&&c.finish/3<=180,key+': grand tour laps must take 90–180 s, got '+(c.finish/3).toFixed(0));
+ // Rivals hold about 20 units/s, so a lap should track the length of the road;
+ // the outer band keeps a grand tour between a sprint and a slog either way.
+ if(course.grand)for(const c of race.cars.slice(1)){const lap=c.finish/3;
+  assert(lap>=45&&lap<=180,key+': a grand tour lap must take 45–180 s, got '+lap.toFixed(0));
+  assert(lap<=track.length/20*1.35,key+': rivals should average close to 20 units/s, got '+(track.length/lap).toFixed(1));}
  const rivals=race.cars.slice(1);assert(rivals.every(c=>c.finish!==null),key+': CPU rivals must finish three laps');
  console.log('PASS:',key,'·',course.name,'·',track.length.toFixed(0),'units ·',track.barriers.length,'wall spans · rivals',rivals.map(c=>c.finish.toFixed(1)+'s/'+c.respawns+' respawns').join(', '));
 }

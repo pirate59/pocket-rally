@@ -213,16 +213,30 @@ Optional `hazard`, `hazardLabel` and `hazardAnchor: [x, z]` place the board's
 themed hazard (`fan` on the desk, `drain` in the bath, `stream` in the garden
 and on the beach) at the course point nearest that anchor.
 
-Lap-time budget: CPU rivals average ~20 units/s, so a grand tour meant to lap
-in 90–180 s needs **1800–3600 units** of road. At that scale use larger radii
-(`radius=30`–`45` sweepers, `radius=12`–`18` hairpins) — the 7/14 defaults are
-tuned for the 6.8-wide arcade road.
+Lap-time budget: CPU rivals average ~20 units/s whatever the shape, so pick the
+road length from the lap you want — **1800–3600 units** for a full 90–180 s
+grand tour, or about **1200 units** for a one-minute stunt lap. At that scale use
+larger radii (`radius=30`–`45` sweepers, `radius=12`–`18` hairpins) — the 7/14
+defaults are tuned for the 6.8-wide arcade road.
+
+A loop drifts sideways by `width + 1`, so a spec containing one only closes at
+the width it was drawn for: lay a grand course out with `width: 9`, not the 6.8
+default, or the seam opens by 2.2 units.
 
 `EXAMPLES.adventure` (Adventure Park) puts a split, a choke and a corkscrew on
 one table. `EXAMPLES.sands` (Shifting Sands Grand Tour, 2173 units ≈ 105 s CPU lap) is
 the worked example: a Bay Straight jump, a coastal sweeper climbing onto a pier
 over the water, a reef chicane, a hairpin-and-diagonal reef section, and a
 comb of dune switchbacks joined by hairpins.
+
+`EXAMPLES.hose` (Coiled Hose Grand Tour, 1310 units ≈ 61 s CPU lap) is the
+short-lap example, and the one that puts every adventurous piece on one board:
+the creek crosses the south straight, which runs into a vertical loop; the road
+comes back 10 units over and doubles back through a radius-22 hairpin; a
+radius-14 helix then climbs 6 units in a single circle, passing over its own
+entry, and the deck it leaves on flies over the start straight at the origin
+before a descending sweeper drops it back to the garden for a dirt jump. Its
+turns sum to −360°, which is what a lap crossing itself twice needs.
 
 `EXAMPLES.desk` (Stationery Crossover Grand Tour, 2000 units ≈ 99 s CPU lap) is
 the worked example for the desk board and for crossing over yourself. It is a
