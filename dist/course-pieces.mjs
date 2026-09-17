@@ -290,5 +290,23 @@ export const EXAMPLES={
    'straight 100', 'R90 sweeper radius=30', 'straight 60', 'hairpin L round radius=16', 'straight 40', 'R135 sharp radius=14',
    'straight 30', 'L135 sharp radius=14', 'straight 252', 'L90 sweeper radius=30', 'straight 200', 'L90 sharp radius=14',
    'straight 20', 'L90 sharp radius=14', 'straight 150', 'hairpin R round radius=12', 'straight 150', 'hairpin L round radius=12',
-   'straight 170', 'R90 sweeper radius=20', 'straight 12.53', 'R90 sweeper radius=20', 'straight 53.36']}
+   'straight 170', 'R90 sweeper radius=20', 'straight 12.53', 'R90 sweeper radius=20', 'straight 53.36']},
+ // A grand tour on the 282 x 204 desktop board (x −128…128, z −82…82, so the road,
+ // its barriers and the toy landmarks all fit). A figure of eight: the start
+ // straight runs the width of the desk at z=0 with a ruler jump on it, a four-leg
+ // comb of hairpins fills the south half, the last leg climbs 6 units onto a deck
+ // that flies over the start straight at the origin — where the grand board draws
+ // its four crossing posts — and a second comb fills the north half. Both combs
+ // stop short of one end so the desk toys keep a pocket: 27 units of clearance
+ // around (99, −30) and (−99, 30). 2000 units, so a CPU lap runs about 99 s.
+ // Turning sums to zero, as it must for a lap that crosses itself exactly once.
+ desk:{name:'Stationery Crossover Grand Tour',tag:'THE DESKTOP FLYOVER GRAND TOUR',desc:'Launch the ruler jump, then dive under your own flyover.<br>Squeeze the pencil-case choke and pick a lane at the eraser island.',tags:['RULER FLYOVER','TWIN DESK JUMPS','CHOKE AND SPLIT'],theme:'table',grand:true,start:{x:0,z:0,y:0,heading:Math.PI/2},
+  hazard:'fan',hazardLabel:'DESK FAN · SIDE DRAFT',hazardAnchor:[0,-82],
+  spec:['straight 204 jump=120', 'L90 sweeper radius=20', 'straight 42', 'L90 sweeper radius=20',
+   'straight 216', 'hairpin L round radius=11', 'straight 20', 'straight 44 choke=4.6', 'straight 110',
+   'hairpin R round radius=11', 'straight 174', 'hairpin L round radius=11',
+   'straight 96 rise=6', 'R90 sweeper radius=12', 'straight 8', 'L90 sweeper radius=12', 'straight 96 rise=-6',
+   'hairpin R round radius=11', 'straight 24', 'straight 44 split=1.6', 'straight 106',
+   'hairpin L round radius=11', 'straight 174', 'hairpin R round radius=11', 'straight 216 jump=124',
+   'R90 sweeper radius=20', 'straight 46', 'R90 sweeper radius=16', 'straight 16']}
 };

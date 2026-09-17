@@ -92,12 +92,18 @@ for(const [key,example] of Object.entries(EXAMPLES)){
  const course=makeCourse(example.spec,example),track=makeTrack(course);
  assert(course.validation.ok&&course.walls&&course.decorated,key+' passes every stage');
  assert(track.n>0&&track.barriers.length>100,key+' builds a track with barriers');
- if(course.grand){const e=course.layout.extent;assert(course.mapScale===3&&course.width===9&&course.base===3,key+' is a grand beach course');assert(e.minX>=-160&&e.maxX<=195&&e.minZ>=-105&&e.maxZ<=235,key+' stays inside the grand beach interior and shoreline');}
+ if(course.grand){const e=course.layout.extent,[boardX,boardZ]=course.mapSize;
+  assert(course.mapScale===3&&course.width===9,key+' is a grand tour course');
+  // The beach board reaches past its bounds into the shoreline and dunes; every
+  // other board is a flat rectangle, so the road and its barriers must fit inside it.
+  if(course.base===3)assert(e.minX>=-160&&e.maxX<=195&&e.minZ>=-105&&e.maxZ<=235,key+' stays inside the grand beach interior and shoreline');
+  else assert(Math.max(-e.minX,e.maxX)+course.width/2<=boardX/2-4&&Math.max(-e.minZ,e.maxZ)+course.width/2<=boardZ/2-4,key+' stays inside the '+boardX+'x'+boardZ+' grand board');
+ }
  else{const e=course.layout.extent;assert(Math.max(-e.minX,e.maxX)<=44&&Math.max(-e.minZ,e.maxZ)<=31,key+' fits the standard board');}
  if(example.spec.some(t=>t.includes('jump')))assert(track.nodes.some(p=>p.gap)&&track.nodes.some(p=>p.ramp),key+' has a jump gap and ramp');
  if(course.validation.crossings.length){assert(track.nodes.some(p=>p.y>4),key+' has a raised deck');const c=course.validation.crossings[0];assert(c.upper-c.lower>=BRIDGE_CLEARANCE);}
  if(example.spec.some(t=>t.includes('split'))){assert(track.barriers.some(w=>w.island),key+' has island walls');assert(Math.max(...track.nodes.map(p=>p.width))>course.width+2,key+' widens at the split');}
- if(example.spec.some(t=>t.includes('choke')))assert(Math.min(...track.nodes.map(p=>p.width))<4,key+' narrows at the choke');
+ if(example.spec.some(t=>t.includes('choke')))assert(Math.min(...track.nodes.map(p=>p.width))<course.width-2,key+' narrows at the choke');
  if(example.spec.some(t=>t.startsWith('loop'))){const rail=track.nodes.filter(p=>p.rail);assert(rail.length>50&&Math.max(...rail.map(p=>p.y))>15&&rail.every(p=>Number.isFinite(p.t3x+p.t3y+p.t3z+p.tx+p.tz)),key+' has finite 3D rail frames up to 2R');assert(track.barriers.every(w=>!track.nodes[w.index].rail),key+' has no walls on the rail');}
  const race=new Race(track);race.countdown=0;race.cars[0].finish=0;let loops=0,top=0;
  for(let i=0;i<900*90&&!race.cars.slice(1).every(c=>c.finish!==null);i++){race.step(1/90);for(const c of race.cars.slice(1)){if(c.rail&&!c.wasRail)loops++;c.wasRail=c.rail;if(c.rail)top=Math.max(top,c.y);}}

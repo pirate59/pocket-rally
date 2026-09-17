@@ -188,11 +188,30 @@ road): `table` (cars), `bath` (boats), `garden` (buggies), `beach` (buggies).
 
 Pass `grand: true` to `makeCourse` for a grand-tour course: the road is 9 wide,
 barrier offset 0.18, `mapScale` 3, and the board comes from the theme
-(`beach` → 460 × 500). The grand beach board's driveable interior is
-x −160…195, z −105…215; the shoreline water strips run beyond x 195 / z 215
-(a raised deck there is a pier over the water) and dune bands beyond
-x −160 / z −105. Use `centre: {x, z}` to place the layout's centre — the beach
-interior is centred near (17, 55).
+(`table` → 282 × 204, `bath` and `garden` → 285 × 207, `beach` → 460 × 500).
+
+The table, bath and garden boards are flat rectangles centred on the origin, so
+the road and its barriers must stay inside them: on the 282 × 204 desk that means
+keeping the layout within about x −128…128, z −88…88. The grand beach board is
+the exception — its driveable interior is x −160…195, z −105…215; the shoreline
+water strips run beyond x 195 / z 215 (a raised deck there is a pier over the
+water) and dune bands beyond x −160 / z −105. Use `centre: {x, z}` to place the
+layout's centre — the beach interior is centred near (17, 55).
+
+Leave the scenery somewhere to stand. `buildGrandWorld` only places a landmark
+where the road is at least `width/2 + radius + 1.5` away, which is ~20 units of
+clearance for the biggest desk toys, so a layout that weaves at one even spacing
+edge to edge ends up bare. Stop a leg or two short of the far end to open a
+pocket instead.
+
+A self-crossing lap also has to add up: a closed course that crosses itself once
+must turn a net 0° (a figure of eight) or ±720°; a lap with no crossing turns
+±360°. If the closure readout will not settle, check the turn total before
+moving the straights around.
+
+Optional `hazard`, `hazardLabel` and `hazardAnchor: [x, z]` place the board's
+themed hazard (`fan` on the desk, `drain` in the bath, `stream` in the garden
+and on the beach) at the course point nearest that anchor.
 
 Lap-time budget: CPU rivals average ~20 units/s, so a grand tour meant to lap
 in 90–180 s needs **1800–3600 units** of road. At that scale use larger radii
@@ -204,6 +223,16 @@ one table. `EXAMPLES.sands` (Shifting Sands Grand Tour, 2173 units ≈ 105 s CPU
 the worked example: a Bay Straight jump, a coastal sweeper climbing onto a pier
 over the water, a reef chicane, a hairpin-and-diagonal reef section, and a
 comb of dune switchbacks joined by hairpins.
+
+`EXAMPLES.desk` (Stationery Crossover Grand Tour, 2000 units ≈ 99 s CPU lap) is
+the worked example for the desk board and for crossing over yourself. It is a
+figure of eight: the start straight runs the width of the desk at z = 0 with a
+ruler jump on it, a four-leg comb of hairpins fills the south half, the last leg
+climbs 6 units and a level deck flies over the start straight at the origin —
+where the grand board draws its four crossing posts — and a second comb, opened
+up by a choke and a split, fills the north half before a second jump on the long
+top straight. Both combs stop short of one end, leaving a toy pocket in the
+south-east and another in the north-west.
 
 ## Worked examples
 
